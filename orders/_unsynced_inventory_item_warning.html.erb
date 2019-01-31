@@ -1,0 +1,13 @@
+<div id='unsynced-inventory-item-warning'>
+  <% if @order.try(:has_unsynced_inventory_items?, integration_key) %>
+    <div class='alert alert-danger alert-dismissable'>
+      <button type="button" class="close" data-dismiss="alert" aria-hidden="true"></button>
+      This order contains inventory type products that are not yet synced to Quickbooks Desktop.
+      <% if States[@order.state] >= States['complete'] %>
+        You will need to make manual corrections to your Quickbooks account.
+      <% else %>
+        Please make sure to sync all products to Quickbooks before advancing the order to prevent any inventory discrepencies.
+      <% end %>
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,19 @@
+<% if @account.nil? %>
+  $('#account-address-info').replaceWith("<section id='account-address-info' class='alert alert-warning alert-dismissable'> <button type='button' class='close' data-dismiss='alert' aria-hidden='true'></button> Could not find account</section>");
+<% else %>
+  $('#delivery_date').replaceWith("<%= escape_javascript(render(partial: 'delivery_date_fields')) %>");
+  $('#account-address-info').replaceWith("<%= escape_javascript(render(partial: 'account_address_fields')) %>");
+  $('#delivery-date').datepicker('setDaysOfWeekHighlighted', '<%=@days_available[0] if @days_available%>');
+  $('#due-date').replaceWith("<input data-provide='datepicker' type='text' name='order[due_date]'' value='<%= display_vendor_date_format(@order.invoice_due_date, @order.vendor.date_format) unless @order.due_date.blank? %>' class='form-control date-picker' data-date-format='<%= @order.vendor.date_format %>' id='due-date'>");
+  $('#payment-terms').html('<%= @account.payment_terms.try(:name) %>');
+  $('.tooltips').tooltip();
+
+  $('#due-date').datepicker({
+  	todayHighlight: true,
+  	autoclose: true,
+  	changeMonth: true,
+    orientation: "bottom auto",
+    todayBtn: true,
+      //todo global disable dates
+  });
+<% end %>

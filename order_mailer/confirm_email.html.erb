@@ -1,0 +1,47 @@
+<table>
+  <tr>
+    <td>
+      <p class="lede">
+        Dear <%= @order.account_handle %>,
+      </p>
+      <p>
+        Thank you for your order with <%= @order.vendor.name %>.<br>
+        <% if @order.vendor.include_website_url_in_emails %>
+          Click <%= link_to "here", edit_order_url(@order) %> to view additional order details.<br>
+        <% end %>
+
+      </p>
+      <p>
+        <% if @send_as_invoice %>
+          Your invoice is attached.
+        <% elsif @order.state == 'complete' && @order.vendor.send_approved_email %>
+          You will receive a follow-up email once your order is approved.
+        <% elsif @order.state == 'approved' && @order.vendor.send_shipped_email %>
+          Your order has been approved. You will receive an email notification once your order is shipped.
+        <% elsif @order.state == 'approved' %>
+          Your order has been approved.
+        <% end %>
+        <br>
+      </p>
+      <% if @send_as_invoice %>
+        <%= render partial: 'spree/invoice_mailer/summary' %>
+      <% end %>
+      <p>
+        Please retain the below order information for your records.
+      </p>
+
+			<!-- Order Summary -->
+      <%= render partial: 'spree/shared/customer_mailer_order_summary_table' %>
+
+			<!-- Order Items Summary -->
+      <%= render partial: 'spree/shared/mailer_line_items_table' %>
+
+      <p><br>
+				Thanks for ordering from <%= @order.vendor.name %>!
+        <%#= Spree.t('order_mailer.confirm_email.thanks') %>
+      </p>
+
+    </td>
+    <td class="expander"></td>
+  </tr>
+</table>

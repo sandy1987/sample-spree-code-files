@@ -1,0 +1,78 @@
+<% if @order.is_editable? %>
+  <div class="row static-info">
+    <div class="col-md-5 name">
+      <%= "#{@order.vendor.try(:order_date_text).to_s.capitalize} Date:".strip %>
+    </div>
+    <div class="input-icon right col-md-7 value">
+      <i style = "margin-right: 12px;" class="fa fa-info-circle tooltips" data-original-title= "<%=@days_available ? @days_available[1] : 'All days available for selected account'%>" data-container="body"></i>
+      <input data-provide = "datepicker" type="text" name="order[delivery_date]" value="<%= display_vendor_date_format(@order.delivery_date, @order.vendor.date_format) unless @order.delivery_date.blank? %>"
+      class="form-control date-picker" data-date-format="<%= @order.vendor.date_format %>" id="delivery-date">
+      <div id = "warning_delivery" class = "hidden note note-warning">
+        <p class = "block">This is not a scheduled <%= "#{@order.vendor.order_date_text} day".strip %><p>
+      </div>
+    </div>
+  </div>
+<% else %>
+  <%= render partial: 'spree/manage/orders/fixed_date_field' %>
+<% end %>
+<div class="row static-info">
+  <div class="col-md-5 name"> Invoice Date: </div>
+  <div class="input-icon right col-md-7 value" >
+    <% if @order.vendor.multi_order_invoice %>
+      <i style = "margin-right: 12px;" class="fa fa-info-circle tooltips" data-original-title= "Only editable if vendor is not using weekly invoices" data-container="body"></i>
+      <input disabled='disabled' data-provide = "datepicker" type="text" name="order[invoice_date]" value="<%= display_vendor_date_format(@order.invoice_date, @order.vendor.date_format) %>"
+        class="form-control date-picker" data-date-format="<%= @order.vendor.date_format %>" id="invoice-date"> 
+    <% else %>
+      <% if @account.nil? %>
+        <i style = "margin-right: 12px;" class="fa fa-info-circle tooltips" data-original-title= "Must select account before editing" data-container="body"></i>
+        <input disabled='disabled' data-provide = "datepicker" type="text" name="order[invoice_date]" value="<%= display_vendor_date_format(@order.invoice_date, @order.vendor.date_format) %>"
+          class="form-control date-picker" data-date-format="<%= @order.vendor.date_format %>" id="invoice-date">
+      <% else %>
+        <input data-provide = "datepicker" type="text" name="order[invoice_date]"
+          value="<%= display_vendor_date_format(@order.invoice_date, @order.vendor.date_format) %>"
+          class="form-control date-picker" data-date-format="<%= @order.vendor.date_format %>" id="invoice-date">
+      <% end %>
+    <% end %>
+  </div>
+</div>
+<div class="row static-info">
+  <div class="col-md-5 name">
+    Due Date:
+  </div>
+  <div class="input-icon right col-md-7 value">
+    <% if @order.vendor.multi_order_invoice %>
+      <i style = "margin-right: 12px;" class="fa fa-info-circle tooltips" data-original-title= "Only editable if vendor is not using weekly invoices" data-container="body"></i>
+      <input disabled='disabled' data-provide = "datepicker" type="text" name="order[due_date]" value="<%= display_vendor_date_format(@order.due_date, @order.vendor.date_format) unless @order.due_date.blank? %>"
+      class="form-control date-picker" data-date-format="<%= @order.vendor.date_format %>" id="due-date">
+    <% else %>
+      <% if @account.nil? %>
+        <i style = "margin-right: 12px;" class="fa fa-info-circle tooltips" data-original-title= "Must select account before editing" data-container="body"></i>
+        <input disabled='disabled' data-provide = "datepicker" type="text" name="order[due_date]" value="<%= display_vendor_date_format(@order.due_date, @order.vendor.date_format) unless @order.due_date.blank? %>"
+        class="form-control date-picker" data-date-format="<%= @order.vendor.date_format %>" id="due-date">
+      <% else %>
+        <input data-provide = "datepicker" type="text" name="order[due_date]" value="<%= display_vendor_date_format(@order.due_date, @order.vendor.date_format) unless @order.due_date.blank? %>"
+          class="form-control date-picker" data-date-format="<%= @order.vendor.date_format %>" id="due-date">
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<script type = "text/javascript">
+  $('#due-date').datepicker({
+  	todayHighlight: true,
+  	autoclose: true,
+  	changeMonth: true,
+    orientation: "bottom auto",
+    todayBtn: true,
+      //todo global disable dates
+  });
+
+  $('#invoice-date').datepicker({
+  	todayHighlight: true,
+  	autoclose: true,
+  	changeMonth: true,
+    orientation: "bottom auto",
+    todayBtn: true,
+      //todo global disable dates
+  });
+</script>

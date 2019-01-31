@@ -1,0 +1,10 @@
+<% message = @order.next_mailer_setting_message %>
+<% if message.present? %>
+  <div class='row'>
+    <div class='col-xs-12 margin-bottom-10'>
+      <span class='help-block-italic'>
+        <%= message %>
+      </span>
+    </div>
+  </div>
+<% end %>

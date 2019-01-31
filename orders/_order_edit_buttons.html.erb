@@ -1,0 +1,95 @@
+<div class="single-order-buttons" id='edit-order-buttons'>
+  <%= render partial: 'mailer_settings' %>
+  <% if @approve_ship_receive %>
+    <% if States[@order.state] < States['shipped'] %>
+      <%= link_to Spree.t('order.actions.cancel'),  { action: :destroy, id: @order.id },
+        method: :delete, data: { confirm: 'Are you sure you want to cancel this order?' },
+        class: 'btn btn-default'%>
+    <% end %>
+    <% if @order.state == 'approved' %>
+      <%= link_to Spree.t('order.actions.unapprove'), manage_order_unapprove_path(@order),
+        data: { confirm: 'Are you sure you want to unapprove this order?' },
+        class: 'btn btn-default warn-before-action', id: 'unapprove-button',
+        method: :post, tabindex: 1 %>
+    <% end %>
+    <% if !@order.is_editable? %>
+      <p>This order can no longer be edited</p>
+    <% else %>
+      <%= submit_tag Spree.t('order.actions.update'), class: 'btn btn-primary warn-before-action', id: 'update-button', tabindex: 1 %>
+      <% if States[@order.state] < States['approved'] %>
+        <%= submit_tag Spree.t('order.actions.approve'), class: 'btn btn-primary add-to-order warn-before-action approve-button', id: 'approve-button', tabindex: 1 %>
+        <% if @order.invoice_sent_at.nil? && !(@vendor.send_approved_email && @vendor.send_approved_email_invoice)%>
+          <%= submit_tag Spree.t('order.actions.approve_and_invoice'), class: 'btn btn-primary add-to-order warn-before-action approve-button', id: 'approve-and-invoice-button', tabindex: 1 %>
+        <% end %>
+      <% end %>
+      <% if @order.state == 'approved' && @vendor.last_editable_order_state >= States['approved'] %>
+        <%= submit_tag Spree.t('order.actions.ship'), class: 'btn btn-primary warn-before-action', id: 'ship-button', tabindex: 1, disabled: (@backordered_variants.present? || @order.shipments.none?) %>
+        <% if @order.invoice_sent_at.nil? && !(@order.vendor.send_final_invoice_email && !@order.vendor.receive_orders) %>
+          <%= submit_tag Spree.t('order.actions.ship_and_invoice'), class: 'btn btn-primary warn-before-action', id: 'ship-button', tabindex: 1, disabled: (@backordered_variants.present? || @order.shipments.none?) %>
+        <% end %>
+      <% end %>
+      <% if @order.state == 'shipped' && @vendor.last_editable_order_state >= States['shipped']%>
+        <%= submit_tag Spree.t('order.actions.confirm_delivered'), class: 'btn btn-primary', id: 'delivered-button', tabindex: 1 %>
+      <% end %>
+      <% if @order.state == 'review' && @vendor.last_editable_order_state >= States['review']%>
+        <%= submit_tag Spree.t('order.actions.finalize'), class: 'btn btn-primary', id: 'finalize-button', tabindex: 1 %>
+        <% if @order.invoice_sent_at.nil? && !@order.vendor.send_final_invoice_email %>
+          <%= submit_tag Spree.t('order.actions.finalize_and_invoice'), class: 'btn btn-primary', id: 'finalize-and-invoice-button', tabindex: 1 %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% else %>
+    <% if States[@order.state] < States['approved'] %>
+      <%= link_to Spree.t('order.actions.cancel'),  { action: :destroy, id: @order.id },
+        method: :delete, data: { confirm: 'Are you sure you want to cancel this order?' },
+        class: 'btn btn-default'%>
+      <%= submit_tag Spree.t('order.actions.update'), class: 'btn btn-primary warn-before-action', id: 'update-button', tabindex: 1 %>
+      <% if @order.state == 'cart' %>
+        <%= submit_tag Spree.t(:submit), class: 'btn btn-primary warn-before-action', id: 'update-button', tabindex: 1 %>
+      <% end %>
+    <% end %>
+  <% end %>
+  <% if @order.invoice_sent_at %>
+    <%= link_to send_invoice_manage_order_path(@order, format: :js), remote: true, class: 'btn btn-primary' do %>
+      <i class='fa fa-envelope'></i> <%= Spree.t(:resend_invoice) %>
+    <% end %>
+  <% elsif @order.state == 'invoice' %>
+  <%= link_to send_invoice_manage_order_path(@order, format: :js), remote: true, class: 'btn btn-primary' do %>
+    <i class='fa fa-envelope'></i> <%= Spree.t(:send_invoice) %>
+  <% end %>
+  <% end %>
+</div>
+
+<script type='text/javascript'>
+  $('.warn-before-action').click(function(e){
+    if($('#new-line-item-select').length && $('#new-line-item-select').val() !== ''){
+      e.preventDefault();
+      var commit = e.currentTarget.value
+      if (confirm('You have selected products that have not yet been added. Are you sure you want to leave?')){
+        $('#single-order-form').append("<input type='hidden' name='commit' value='" + commit + "'>");
+        $('#single-order-form').submit();
+      }
+    }
+  });
+
+  $('.approve-button').click(function(e){
+    var deliveryDate = new Date($('#order-delivery-date').val());
+    var today = new Date();
+    var commit = e.currentTarget.value
+    if (deliveryDate < today){
+      e.preventDefault();
+      if (confirm('The date selected is in the past, are you sure you want to proceed?')){
+        $('#single-order-form').append("<input type='hidden' name='commit' value='" + commit + "'>");
+        $('#single-order-form').submit();
+      }
+    }
+    var orderRuleErrors = <%= @order.errors_from_order_rules.any? %>
+    if (orderRuleErrors){
+      e.preventDefault();
+        if (confirm("<%= raw(@order.errors_from_order_rules.join(', ')) %>" + ". Are you sure you want to proceed?")){
+          $('#single-order-form').append("<input type='hidden' name='commit' value='" + commit + "'>");
+          $('#single-order-form').submit();
+      }
+    }
+  });
+</script>

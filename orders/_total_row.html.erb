@@ -1,0 +1,88 @@
+<tbody id='totals-row'>
+  <% include_weights = @order.vendor.try(:include_weights) %>
+  <% colspan = 2 %>
+  <% colspan += 1 if include_weights %>
+  <tr class="totals">
+    <td colspan="<%= colspan_left %>"></td>
+    <td><strong>Total:</strong></td>
+    <% if States[@order.state] >= States['approved'] %>
+      <td><strong> <%= @order.line_items.sum(:ordered_qty) %></strong></td>
+      <% colspan += 1 %>
+    <% end %>
+    <% if @order.vendor.try(:receive_orders) && (@order.shipped? || @order.received?) %>
+      <td><strong><%= @order.line_items.sum(:shipped_qty) %><strong></td>
+      <% colspan += 1 %>
+    <% end %>
+    <td><strong><%= @order.item_count %></strong></td>
+    <% if include_weights %>
+      <td><strong><%= @order.display_total_weight_in(@order.vendor.weight_units) %></strong></td>
+    <% end %>
+    <td><strong><span class='total-price'><%= display_sweet_price(@order.total, @order.currency) %></span></strong></td>
+  </tr>
+
+  <% if @order.vendor.try(:payment_methods).try(:active).present? %>
+    <tr class="totals">
+      <td colspan='<%= colspan_left %>'></td>
+      <td colspan='<%= colspan %>'>
+        Paid:
+      </td>
+      <td>
+        <%= display_sweet_price(@order.payment_total, @order.currency) %>
+      </td>
+    </tr>
+    <% pending_balance = @order.pending_balance %>
+    <% if pending_balance > 0 %>
+      <tr class="totals">
+        <td colspan='<%= colspan_left %>'></td>
+        <td colspan='<%= colspan %>'>
+          Pending:
+        </td>
+        <td>
+          <%= display_sweet_price(pending_balance, @order.currency) %>
+        </td>
+      </tr>
+    <% end %>
+      <tr class="totals">
+        <td colspan='<%= colspan_left %>'></td>
+        <td colspan='<%= colspan %>'>
+          Balance Due:
+        </td>
+        <td>
+          <%= display_sweet_price(@order.remaining_balance, @order.currency) %>
+        </td>
+      </tr>
+    <% if current_company.subscription_includes?('payments') %>
+      <tr class="totals">
+        <td colspan='<%= colspan_left %>'></td>
+        <td colspan='<%= colspan + 1 %>'>
+          <% if @order.payments.none? && current_spree_user.can_write?('payments', 'order') && States[@order.state] >= States['cart'] %>
+            <%= link_to '#payment',
+              data:{toggle: 'modal', target:'#payment-modal', 'order-id' => @order.id},
+              class: "btn green-jungle margin-bottom-20 new-payment-btn #{'disabled' unless @order.line_items.present?}",
+              style: 'display:inline-block;' do %>
+              <i class='fa fa-plus'></i> New Payment
+            <% end %>
+          <% elsif current_spree_user.can_read?('payments', 'order')%>
+            <button class='btn btn-primary margin-bottom-20', id='view-payments-link'>
+              <i class='fa fa-search'></i> View Payments
+            </button>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  <% end %>
+
+</tbody>
+<script type='text/javascript'>
+  $('#view-payments-link').off('click').click(function(e){
+    e.preventDefault();
+    $('a[href="#payments"]','.nav-tabs').tab('show');
+  });
+  $('.new-payment-btn').off('click').click(function(){
+    var orderId = $(this).data('order-id');
+    $.ajax({
+      method: 'GET',
+      url: '/manage/orders/' + orderId + '/payments/new.js'
+    });
+  });
+</script>

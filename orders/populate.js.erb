@@ -1,0 +1,17 @@
+<% if nil %>
+	// need to update below code for any dynamic update after populating order
+	// below code is from spree ajax add to cart gem
+	$('#link-to-cart').html("<%= j(link_to_cart) %>");
+<% end %>
+
+<% if flash[:success] %>
+	$('#alert').html("<div class='alert alert-success alert-auto-dissapear'><%= flash[:success] %></div>");
+	setTimeout(function() {
+			$(".alert-auto-dissapear").fadeOut(1500);
+	},2000);
+	$('#shopping-cart').html("<i class='fa fa-shopping-cart'></i> ( <%= display_sweet_price(current_order.item_total, current_order.currency) %> )");
+	$("#shopping-cart").fadeIn(100).fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
+<% end %>
+<% if flash[:error] %>
+	$('#alert').html("<div class='alert alert-danger alert-dismissable'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'></button><%= flash[:error] %></div>");
+<% end %>

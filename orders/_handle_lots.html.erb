@@ -1,0 +1,160 @@
+  <div class="modal fade" id="lot_modal" role="dialog">
+    <div class="modal-dialog">
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="caption-subject font-blue-soft bold uppercase">Lot Selection</h4>
+        </div>
+        <form id="lot_selection_form">
+          <div class="modal-body">
+            <div id="lot_qty_div">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="submit_qty btn btn-primary">Update Lots</button>
+            <button type="button" class="cancel_qty btn btn-default" data-dismiss="modal">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+<script type="text/javascript">
+
+    var getLotQty = function(line_item_id, order_id){
+      $.ajax({
+        url: '/manage/orders/' + order_id + '/get_lot_qty.js' ,
+        type: 'GET',
+        dataType: 'script',
+        data: {
+          line_item_id: line_item_id,
+        }
+      });
+    };
+    var submitLotCount= function(line_item_lots, line_item){
+      $.ajax({
+        url: '/manage/orders/submit_lot_count.js' ,
+        type: 'GET',
+        dataType: 'script',
+        data: {
+          line_item_lots: line_item_lots,
+          line_item: line_item
+        }
+      });
+    };
+
+    $('.lot_qty_btn').click(function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var line_item_id = this.name;
+      var order_id = $(this).data('order-id');
+      if (line_item_id != undefined || line_item_id != ""){
+        getLotQty(line_item_id, order_id);
+      } else {
+        alert("Item not found");
+      }
+      $('#lot_modal').modal('show');
+    });
+
+    $('.submit_qty').click(function() {
+      $('#lot_selection_form').submit();
+    })
+
+    $('#lot_selection_form').submit(function(e) {
+      e.preventDefault();
+      var total = $('.number_lot').data('total');
+      line_item_lots = {}
+      var row;
+      var sum = 0;
+      var ordered_qty;
+      var line_item;
+      var canSubmitLots = true;
+
+      var checkAvailiableQty = function (line) {
+
+          var qty = line.value
+          var lot_id = $(line).data('id')
+          var avaialiable = parseFloat($('.qty_available[data-lot-id="'+ lot_id+'"]').text())
+          var lot_number = $('.number_lot[data-lot-id="'+ lot_id+'"]').text()
+
+          var parts_count = parseFloat($('.qty_part[data-lot-id="'+ lot_id+'"]').text())
+          if (parts_count == undefined || isNaN(parts_count)) {
+            parts_count = 1
+          }
+          if (avaialiable < qty*parts_count) {
+            alert("Selected more than avaialiable on the lot number: " + lot_number +'.');
+            canSubmitLots = false
+            return false;
+          } else {
+            return true
+          }
+      }
+
+      // }
+      if ($('.qty_part').length != 0) {
+        qty_hash = {};
+        right_count_hash = {};
+        $('.submit_lot_count').each(function() {
+          var lot_id = $(this).data('id')
+          var qty_part = $('.qty_part[data-lot-id='+lot_id+']');
+          var count_part = qty_part.text();
+          var variant_id = qty_part.data('variantId');
+          line_item = $(this).data('line-item');
+          ordered_qty = parseFloat($('.line-item-qty[data-line-id="' + line_item + '"]').val()) * parseFloat(count_part);
+          if (ordered_qty == undefined || isNaN(ordered_qty)) {
+            ordered_qty = parseFloat($('[data-line-id="' + line_item + '"]').val()) * parseFloat(count_part);
+          }
+          if (right_count_hash[variant_id] == undefined) {
+            right_count_hash[variant_id] = ordered_qty;
+          }
+          if (qty_hash[variant_id] == undefined) {
+            qty_hash[variant_id] = parseFloat(this.value);
+          } else {
+            qty_hash[variant_id] = qty_hash[variant_id] + parseFloat(this.value);
+          }
+          line_item_lots[$(this).data('id')] = this.value
+          canSubmitLots = checkAvailiableQty(this)
+        });
+        if (line_item_lots != {} && JSON.stringify(right_count_hash) === JSON.stringify(qty_hash)) {
+          alert("Please have the sum of lot quantity equal to order quantity");
+          canSubmitLots = false
+        }
+
+      } else {
+        $('.submit_lot_count').each(function() {
+          line_item = $(this).data('line-item');
+          if (ordered_qty == undefined) {
+            ordered_qty = $('.line-item-qty[data-line-id="' + line_item + '"]').val();
+            if (ordered_qty == undefined) {
+              ordered_qty = $('[data-line-id="' + line_item + '"]').val();
+            }
+          }
+          line_item_lots[$(this).data('id')] = this.value
+          sum += parseFloat(this.value);
+          canSubmitLots = checkAvailiableQty(this)
+        });
+
+        var original_qty = $('.line-item-qty[data-line-id="' + line_item + '"]').data('quantity')
+        if(original_qty != undefined && parseFloat(original_qty) !== parseFloat(ordered_qty)){
+          alert("Please update order before adjusting lot quantities")
+          canSubmitLots = false
+        }else if (line_item_lots != {} && sum != ordered_qty) {
+          alert("Please have the sum of lot quantity equal to order quantity");
+          canSubmitLots = false
+        }
+      }
+
+      if (canSubmitLots){
+        submitLotCount(line_item_lots, line_item);
+        $('#lot_modal').modal('hide');
+      }
+    });
+
+    $('.cancel_qty').click(function() {
+      $('.submit_lot_count').each(function() {
+        this.value = 0;
+      });
+    });
+
+</script>

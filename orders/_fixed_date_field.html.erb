@@ -1,0 +1,9 @@
+<div class="row static-info">
+
+  <div class="col-sm-5 name">
+    <%= "#{@order.vendor.try(:order_date_text).to_s.capitalize} Date:".strip %>
+  </div>
+  <div class="input-icon right col-sm-7 value">
+    <%= display_vendor_date_format(@order.delivery_date, @order.vendor.date_format) %>
+  </div>
+</div>

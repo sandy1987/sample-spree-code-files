@@ -1,0 +1,243 @@
+<%= content_for :head_title do %>
+  Orders
+<% end %>
+
+<%= content_for :page_title do %>
+	<span class="order-id">
+		Order #<%= @order.display_number %>
+	</span>
+<% end %>
+<%= content_for :page_bar do %>
+  <ul class="page-breadcrumb">
+    <li>
+      <%= link_to "Home", manage_path %>
+      <i class="fa fa-circle"></i>
+    </li>
+		<li>
+      <%= link_to "Orders", manage_orders_path %>
+			<!--<i class="fa fa-circle"></i>-->
+    </li>
+  </ul>
+	<div class="page-toolbar">
+    <div class="btn-group pull-right">
+			<%= link_to "Back to All Orders", manage_orders_path, class: "btn green" %>
+    </div>
+  </div>
+<% end %>
+
+<div class="content">
+  <div id='unsynced-inventory-item-warning'></div>
+
+  <%= form_for [:manage, @order], html: {id: "single-order-form"}, remote: true do |order_form|%>
+    <div class="row">
+      <%= render partial: 'spree/manage/orders/order_details' %>
+      <div class="col-md-6 col-sm-12" id='account-details'>
+        <div class="portlet blue-hoki box">
+          <div class="portlet-title">
+            <div class="caption">
+              <i class="fa fa-cogs"></i>Customer Information
+            </div>
+          </div>
+          <div class="portlet-body">
+            <div class="row static-info">
+              <div class="col-md-5 name"> Customer Name: </div>
+              <div class="col-md-7 value">
+                <%= order_form.collection_select(:account_id, @vendor.customer_accounts.active.order('fully_qualified_name ASC'), :id, :fully_qualified_name, {include_blank: true}, {id: 'order-customer-id', class: "form-control select2 select2-hidden-accessible", placeholder: "Choose Customer"}) %>
+              </div>
+            </div>
+
+            <%= render partial: 'account_address_fields' %>
+            <button id='save-account' class='btn pull-right btn-primary hidden'><i class='fa fa-check'></i>Save</button>
+            <div class='clearfix'></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="clearfix"></div>
+
+    <div class="table-scrollable">
+      <table class="table table-striped table-hover draggable-body" id="sample_1">
+        <thead>
+          <%#= search_form_for [:manage, @search], class: "form" do |f| %>
+          <tr>
+            <th></th>
+            <th></th>
+            <th>
+              <%= sort_link @search, :name, "Name" %>
+            </th>
+            <th>
+              <%= sort_link @search, :sku, "Sku" %>
+            </th>
+            <th>
+              <%= sort_link @search, :lot_number, 'Lot Number' %>
+            </th>
+            <th width="150px">
+              <%= sort_link @search, :pack_size, "Pack/Size" %>
+            </th>
+            <th width="100px">
+              <%= sort_link @search, :price, "Price" %>
+            </th>
+            <th width="150px">
+              <%= sort_link @search, :quantity, "Quantity" %>
+            </th>
+            <% if @order.vendor.try(:include_weights) %>
+              <th>Tot Wt</th>
+            <% end %>
+            <th>
+              <%= sort_link @search, :total, "Total" %>
+            </th>
+            <% if @vendor.track_line_item_class? %>
+              <th>
+                <%= sort_link @search, :txn_class, "Class" %>
+              </th>
+            <% end %>
+          </tr>
+          <tr role="row" class="filter">
+
+          </tr>
+        </thead>
+        <% colspan_left = 6 %>
+        <%# colspan_left -= 1 unless current_vendor_view_settings.line_item_lot_number %>
+        <%# colspan_left -= 1 unless current_vendor_view_settings.variant_pack_size %>
+        <%= render partial: 'line_item', collection: @line_items, locals: { order_form: order_form } %>
+        <tbody id='variant-quick-add'>
+          <% if order_can_add_products? %>
+            <tr id='variant-search-row'>
+              <td></td>
+              <td>
+                <%= link_to '#', class: 'btn btn-xs red delete-input-row-btn', id: 'clear-new-line-item' do %>
+                  <i class='fa fa-times'></i>
+                <% end %>
+              </td>
+              <td id='variant-select-cell' colspan="<%= colspan_left %>">Loading Products <%= image_tag 'frontend/loading.gif' %></td>
+              <td colspan="<%= @order.try(:approved?) ? 2 : 1 %>"class='form-group'>
+                <input name='line_item_variant_qty' type='number' min='0' step='any' id='new-line-item-qty' class='form-control new-item-required line-item-number'>
+              </td>
+              <td colspan="100%">
+                <button id='add-new-line-item-button' class='btn green-jungle'>
+                  <i class='fa fa-plus'></i> Add
+                </button>
+              </td>
+
+            </tr>
+          <% end %>
+          <%= render partial: 'subtotal_row', locals: {colspan_left: colspan_left} %>
+        </tbody>
+        <tbody id='all-adjustments' style='border-top: none;'>
+          <%= render partial: 'adjustments', locals: {colspan_left: colspan_left} %>
+        </tbody>
+
+        <%= render partial: 'total_row', locals: {colspan_left: colspan_left} %>
+      </table>
+    </div>
+    <div class="single-order-buttons" id='edit-order-buttons'>
+    </div>
+
+  <% end %>
+
+
+</div>
+
+<% if @vendor.lot_tracking %>
+  <%= render partial: 'spree/manage/orders/handle_lots' %>
+<% end %>
+
+<%= render partial: 'spree/shared/payments/modal/new' %>
+
+<script type="text/javascript">
+  var date_selected = false;
+  var date = null;
+
+  var getAccountDetails = function(account_id, order_number){
+    if(order_number === ''){
+      $('#single-order-form').submit();
+    }else{
+      $.ajax({
+        url: '/manage/orders/customer_accounts' ,
+        type: 'GET',
+        dataType: 'script',
+        data: {
+          account_id: account_id,
+          order_number: order_number,
+          date_selected: date_selected
+        }
+      });
+    }
+    // $('#order-customer-id').select2('enable', false);
+    $('#save-account').addClass('disabled');
+  };
+
+  var loadVariantSearchRow = function(){
+    $.ajax({
+      url: '/manage/orders/variant_search.js',
+      type: 'GET',
+      dataType: 'script'
+    });
+  }
+
+  $(document).ready(function(){
+    loadVariantSearchRow();
+    $('#clear-new-line-item').click(function(e){
+      e.preventDefault();
+      $('#new-line-item-select').select2('val', '');
+      $('#new-line-item-qty').val('');
+    });
+    $('#order-customer-id').change(function(){
+      var order_number = $('#order-number').data('order-number');
+      var account_id = $('#order-customer-id option:selected').val();
+      if(typeof account_id !== "undefined"){
+        getAccountDetails(account_id, order_number);
+      }
+      $('#order-user-id').empty();
+      $('.value', '#customer-address-info').each(function(){
+        if(!$(this).hasClass('hidden')){
+          $(this).addClass('hidden');
+        }
+      });
+    });
+    $('#save-account').click(function(e){
+      e.preventDefault();
+      $('#single-order-form').submit();
+      $('#order-customer-id').select2('enable', false);
+      $('#save-account').addClass('disabled');
+    });
+  });
+  // if($('#order-customer-id option:selected').val() !== ''){
+  //   getAccountDetails($('#order-customer-id option:selected').val());
+  // }
+
+  //Drag-Drop line items
+  $(function(){
+    var ready, set_positions;
+    set_positions = function(){
+      // loop through and give each task a data-pos
+      // attribute that holds its position in the DOM
+      $('table.draggable-body tbody.line-item-row').each(function(i){
+        $(this).attr("data-pos",i+1);
+      });
+    }
+    ready = function(){
+      // call set_positions function
+      set_positions();
+      // after the order changes
+      $('table.draggable-body').sortable({items: 'tbody.line-item-row'}).bind('sortupdate', function(e, ui) {
+          // array to store new order
+          updated_order = []
+          // set the updated positions
+          set_positions();
+
+          // populate the updated_order array with the new task positions
+          $('table.draggable-body tbody.line-item-row').each(function(i){
+            updated_order.push({ id: $(this).data("id"), position: i+1 });
+          });
+          // send the updated order via ajax
+          $.ajax({
+            type: "get",
+            url: '/manage/orders/update_order_line_items_position',
+            data: { order: updated_order }
+          });
+      });
+    }
+    $(document).ready(ready);
+  })
+</script>

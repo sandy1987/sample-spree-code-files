@@ -1,0 +1,22 @@
+<li class="dropdown" id="cart-actions">
+    <%
+      cart = edit_manage_order_path(current_order)
+      save_and_clear = manage_save_and_clear_order_path(prev_controller: params[:controller], prev_action: params[:action])
+    %>
+    <a href="javascript:;" id="shopping-cart" class="dropdown-toggle" data-hover="dropdown" data-toggle="dropdown" data-close-others="true">
+      <i class="fa fa-shopping-cart"></i>
+      <span id="cart-value">( <%= current_order.item_count == 0 ? "Empty" : display_sweet_price(current_order.item_total, current_order.currency) %> )</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-default">
+      <li>
+        <%= link_to cart do %>
+          <span>View Order</span>
+          <%= render 'spree/manage/orders/cart_overview' %>
+        <% end %>
+      </li>
+      <li>
+        <%= link_to "Save for later", save_and_clear %>
+      </li>
+    </ul>
+  </li>
+  

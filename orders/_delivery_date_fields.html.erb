@@ -1,0 +1,67 @@
+<section id = "delivery_date">
+  <div class="input-icon right col-md-7 value">
+  <i id = "date_icon" style="margin-right: 12px;" class="fa fa-info-circle tooltips" data-original-title="<%=@days_available[1] if @days_available%>" data-container="body"></i>
+    	<input data-provide="datepicker" type="text" name="order[delivery_date]"
+    	  value=''
+    	  class="form-control date-picker" data-date-format="<%= @vendor.date_format %>" id="delivery-date">
+  	  	<div id="warning_delivery" class="hidden note note-warning">
+      	<p class="block">This is not a scheduled <%= @vendor.order_date_text %> day<p>
+      </div>
+  </div>
+</section>
+
+<script type = "text/javascript">
+  $('#delivery-date').datepicker({
+    daysOfWeekHighlighted: "<%=@days_available[0] if @days_available%>",
+  	todayHighlight: true,
+  	autoclose: true,
+  	changeMonth: true,
+    orientation: "bottom auto",
+    todayBtn: true,
+      //todo global disable dates
+  });
+
+//if there is an ajax call, there will be a @next_available_day,
+//otherwise we'll set the date to just tomorrow
+<% if @date_selected == "true" && !@next_available_day %>
+  $('#delivery-date').datepicker('setDate', date)
+<% elsif  @date_selected == "false" && @next_available_day%>
+  $('#delivery-date').datepicker('setDate', "+<%=@next_available_day%>");
+  //reset
+  date_selected = false;
+<% elsif !@next_available_day && !@date_selected %>
+  //set it to tomorrow if no date has been selected and no vendor has been chosen
+  $('#delivery-date').datepicker('setDate', "+1d");
+<% end %>
+
+<% if @days_available && @account.try(:can_select_delivery?) %>
+ 	var origin_date = $('#delivery-date').datepicker('getDate');
+  if (origin_date != null) {
+    var origin_dayOfWeek = origin_date.getUTCDay();
+    $('#date_icon').tooltip();
+   	if ("<%=@days_available[0]%>".indexOf(origin_dayOfWeek.toString()) > -1) {
+      $("#warning_delivery").removeClass("hidden");
+    } else {
+      $("#warning_delivery").addClass("hidden");
+    }
+  }
+  $("#delivery-date").on("change",function(){
+    date_selected = true;
+    date = $(this).datepicker('getDate');
+    if (date != null) {
+      var dayOfWeek = date.getUTCDay();
+      if ("<%=@days_available[0]%>".indexOf(dayOfWeek.toString()) > -1) {
+        $("#warning_delivery").removeClass("hidden");
+      } else {
+        $("#warning_delivery").addClass("hidden");
+      }
+    }
+  });
+
+<%else%>
+  $("#delivery-date").on("change",function(){
+    date_selected = true;
+    date = $(this).datepicker('getDate');
+  });
+<% end %>
+</script>

@@ -1,0 +1,73 @@
+<% @account_address_ship ||= @account.try(:shipping_addresses).try(:first) %>
+<% @account_address_bill ||= @account.try(:billing_addresses).try(:first) %>
+<section id='account-address-info'>
+  <input id="account_id" name="account_id" type="hidden" value="<%= @account_id %>" />
+    <div class="row static-info">
+      <div class="col-md-5 name"> Email: </div>
+      <div class="col-md-7 value order-email"> <%= @order.try(:email) %> </div>
+    </div>
+    <div class="row static-info">
+      <div class="col-md-5 name"> Shipping Address: </div>
+      <div class="col-md-7 value" id="ship_address1"> <%= @account_address_ship.try(:company) || @account.try(:fully_qualified_name) %> </div>
+    </div>
+    <% unless @account_address_ship.try(:address1).blank? %>
+      <div class="row static-info">
+        <div class="col-md-5 name"> </div>
+        <div class="col-md-7 value"> <%= @account_address_ship.address1 %> </div>
+      </div>
+    <% end %>
+    <% unless @account_address_ship.try(:address2).blank? %>
+      <div class="row static-info">
+        <div class="col-md-5 name"> </div>
+        <div class="col-md-7 value"> <%= @account_address_ship.address2 %> </div>
+      </div>
+    <% end %>
+    <div class="row static-info">
+      <div class="col-md-5 name"> </div>
+      <div class="col-md-7 value">
+        <% if @account_address_ship.try(:city).present? && @account_address_ship.try(:state).present? %>
+          <%= @account_address_ship.try(:city) %>, <%= @account_address_ship.try(:state).try(:abbr) %> <%= @account_address_ship.try(:zipcode) %>
+        <% elsif @account_address_ship.try(:city).present? && @account_address_ship.try(:state).blank? %>
+          <%= @account_address_ship.try(:city) %> <%= @account_address_ship.try(:zipcode) %>
+        <% else %>
+          <%= @account_address_ship.try(:state).try(:abbr) %> <%= @account_address_ship.try(:zipcode) %>
+        <% end %>
+      </div>
+    </div>
+    <div class="row static-info">
+      <div class="col-md-5 name"> Shipping Phone Number: </div>
+      <div class="col-md-7 value"> <%= @account_address_ship.try(:phone) %> </div>
+    </div>
+    <div class="row static-info">
+      <div class="col-md-5 name"> Billing Address: </div>
+      <div class="col-md-7 value"> <%= @account_address_bill.try(:company) || @account.try(:fully_qualified_name) %> </div>
+    </div>
+    <% unless @account_address_bill.try(:address1).blank? %>
+      <div class="row static-info">
+        <div class="col-md-5 name"> </div>
+        <div class="col-md-7 value"> <%= @account_address_bill.try(:address1) %> </div>
+      </div>
+    <% end %>
+    <% unless @account_address_bill.try(:address2).blank? %>
+      <div class="row static-info">
+        <div class="col-md-5 name"> </div>
+        <div class="col-md-7 value"> <%= @account_address_bill.try(:address2) %> </div>
+      </div>
+    <% end %>
+    <div class="row static-info">
+      <div class="col-md-5 name"> </div>
+      <div class="col-md-7 value">
+        <% if @account_address_bill.try(:city).present? && @account_address_bill.try(:state).present? %>
+          <%= @account_address_bill.try(:city) %>, <%= @account_address_bill.try(:state).try(:abbr) %> <%= @account_address_bill.try(:zipcode) %>
+        <% elsif @account_address_bill.try(:city).present? && @account_address_bill.try(:state).blank? %>
+          <%= @account_address_bill.try(:city) %> <%= @account_address_bill.try(:zipcode) %>
+        <% else %>
+          <%= @account_address_bill.try(:state).try(:abbr) %> <%= @account_address_bill.try(:zipcode) %>
+        <% end %>
+      </div>
+    </div>
+    <div class="row static-info">
+      <div class="col-md-5 name"> Billing Phone Number: </div>
+      <div class="col-md-7 value"> <%= @account_address_bill.try(:phone) %> </div>
+    </div>
+</section>

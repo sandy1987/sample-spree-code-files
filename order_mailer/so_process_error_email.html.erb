@@ -1,0 +1,41 @@
+<table>
+  <tr>
+    <td>
+      <p class="lede">
+        Dear <%= @order.account_handle %>,
+      </p>
+      <p>
+        There was a problem processing your order from standing order: <%= @so_name %>.<br><br>
+        <% if @errors.present? %>
+          Error Message:
+          <ul>
+            <% @errors.each do |error| %>
+              <li><%= error %></li>
+            <% end %>
+          </ul>
+        <% end %>
+        <br><br>
+        Click <%= link_to "here", edit_order_url(@order) %> review the order and submit it.
+        <% if @order.account.try(:can_select_delivery?) %>
+          Remember, the order cutoff time is <%= @order.vendor.order_cutoff_time %> on
+          <%= display_vendor_date_format(@order.delivery_date - @order.max_lead_time.days, @order.vendor.date_format) %>,
+          so please get your order in beforehand, to make sure we can fulfill it.
+        <% end %>
+        <br>
+      </p>
+      <br>
+
+			<!-- Order Summary -->
+      <%= render partial: 'spree/shared/customer_mailer_order_summary_table' %>
+
+			<!-- Order Items Summary -->
+      <%= render partial: 'spree/shared/mailer_line_items_table' %>
+
+      <p><br>
+				Thanks for ordering from <%= @order.vendor.name %>!
+      </p>
+
+    </td>
+    <td class="expander"></td>
+  </tr>
+</table>

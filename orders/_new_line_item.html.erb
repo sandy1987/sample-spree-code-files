@@ -1,0 +1,123 @@
+<% url = variant.is_master ? manage_product_path(variant.product) : manage_product_variant_path(variant.product, variant) %>
+<% @user_edit_line_item = current_spree_user.permissions.fetch('order',{}).fetch('edit_line_item') %>
+<tbody id="line_item_<%= @line_item.id %>" data-formlineid="<%= item_form_idx %>" data-id="<%= @line_item.id %>" data-pos="<%= @line_item.position %>" class="line-item-row">
+  <tr data-formlineid="<%= item_form_idx %>" data-id="<%= @line_item.id %>" class="line-item-row">
+    <td style='width: 20px; padding-right: 0px;'><i class="fa fa-reorder"></i></td>
+    <td>
+      <div class="cel">
+        <%= link_to raw("<i class='fa fa-times'></i>"), {format: :js, action: :unpopulate, order_id: @order.id, line_item_id: @line_item.id, item_form_idx: item_form_idx},
+          class: 'btn btn-xs red delete-input-row-btn close-button', id: "delete-item-button-#{@line_item.id}", remote: true %>
+      </div>
+    </td>
+    <td>
+      <% if @user_edit_line_item %>
+        <textarea rows="1" class="form-control-inline-textarea autoresize line-item-area"
+          name="order[line_items_attributes][<%= item_form_idx %>][item_name]"
+          id="order_line_items_attributes_<%= item_form_idx %>_item_name"
+          style="height: 34px;"><%= @line_item.item_name %></textarea>
+      <% else %>
+        <%= link_to @line_item.item_name.to_s, url %>
+      <% end %>
+    </td>
+    <td>
+      <%= link_to variant.sku.to_s, url %>
+    </td>
+    <% if variant.should_track_lots? %>
+      <td id="line_item_<%= @line_item.id %>_lots">
+        <% if @line_item.variant.try(:should_track_lots?) %>
+          <% line_item_lots = @line_item.lots.pluck(:number).join(', ') %>
+          <% if @user_edit_line_item && (!@order.approved? || @approve_ship_receive)%>
+            <% if line_item_lots.present? %>
+              <a name="<%=@line_item.id%>" class="lot_qty_btn inline" data-toggle="modal" data-target="#lot_modal" data-order-id='<%= @line_item.order_id %>'>
+                <%= @line_item.lots.pluck(:number).join(', ') %> <i class='fa fa-pencil'></i>
+              </a>
+            <% else %>
+              <%= link_to '#lot', data: {toggle: 'modal', target: '#lot_modal', 'order-id' => "#{@line_item.order_id}"}, name: "#{@line_item.id}", class: 'lot_qty_btn btn btn-primary btn-xs' do %>
+                <i class='fa fa-plus'></i> Add Lot
+              <% end %>
+            <% end %>
+          <% else %>
+            <%= link_to @line_item.lots.pluck(:number).join(', '), url, class: 'inline' %>
+          <% end %>
+        <% end %>
+      </td>
+    <% else %>
+    <td>
+      <input type='text' name='order[line_items_attributes][<%= item_form_idx %>][lot_number]'
+        value='<%= @line_item.lot_number %>' class='form-control line-item-area'
+        id="order_line_items_attributes_<%= item_form_idx %>_lot_number">
+    </td>
+    <% end %>
+    <td>
+      <% if @user_edit_line_item %>
+      <input type='text' name='order[line_items_attributes][<%= item_form_idx %>][pack_size]'
+        value='<%= @line_item.pack_size %>' class='form-control line-item-area'
+        id="order_line_items_attributes_<%= item_form_idx %>_pack_size">
+      <% else %>
+        <%= link_to @line_item.pack_size.to_s, url %>
+      <% end %>
+    </td>
+    <td class='price-input'>
+      <% if @user_edit_line_item %>
+        <label class="currency-label line-item-currency"><%= currency_symbol(@order.currency) %></label>
+        <input value="<%= number_with_precision(@line_item.discount_price, precision: 2) %>" class="form-control price-field line-item-price" tabindex="1" step="0.01" type="number" name="order[line_items_attributes][<%= item_form_idx %>][price]" id="order_line_items_attributes_<%= item_form_idx %>_price">
+      <% else %>
+        <%= link_to display_sweet_price(@line_item.discount_price, @line_item.currency) %>
+      <% end %>
+    </td>
+    <td>
+      <% if States[@order.state] >= States['approved'] %>
+        <input min="0" class="form-control ordered-qty line-item-number"
+          step='<%= variant.step_size %>' data-line-id="<%= @line_item.id %>"
+          tabindex="1" data-id="<%= item_form_idx %>" type="number" value="<%= @line_item.ordered_qty %>"
+          name="order[line_items_attributes][<%= item_form_idx %>][ordered_qty]"
+          id="order_line_items_attributes_<%= item_form_idx %>_quantity">
+      <% else %>
+        <input min="0" class="form-control ordered-qty line-item-qty line-item-number"
+          step='<%= variant.step_size %>' data-line-id="<%= @line_item.id %>" data-quantity='<%= @line_item.quantity %>'
+          tabindex="1" data-id="<%= item_form_idx %>" type="number" value="<%= @line_item.quantity %>"
+          name="order[line_items_attributes][<%= item_form_idx %>][quantity]"
+          id="order_line_items_attributes_<%= item_form_idx %>_quantity">
+      <% end %>
+    </td>
+    <% if States[@order.state] >= States['approved'] %>
+      <td>
+        <input min="0" class="form-control ordered-qty line-item-qty line-item-number"
+          step='<%= variant.step_size %>' data-line-id="<%= @line_item.id %>" data-quantity='<%= @line_item.quantity %>'
+          tabindex="1" data-id="<%= item_form_idx %>" type="number" value="<%= @line_item.quantity %>"
+          name="order[line_items_attributes][<%= item_form_idx %>][quantity]"
+          id="order_line_items_attributes_<%= item_form_idx %>_quantity">
+      </td>
+    <% end %>
+    <% if @order.vendor.try(:include_weights) %>
+      <td>
+        <% unit = variant.weight_units.blank? ? @vendor.weight_units : variant.weight_units %>
+        <%= link_to @line_item.weight_in(unit).to_s, url %>
+      </td>
+    <% end %>
+    <td>
+      <%= link_to display_sweet_price(@line_item.amount, @line_item.currency), url %>
+    </td>
+    <% if @order.vendor.track_line_item_class? %>
+      <td>
+        <%= collection_select(:line_item, :txn_class_id, @vendor.transaction_classes, :id, :fully_qualified_name, {include_blank: true}, class: 'form-control', name:"order[line_items_attributes][#{item_form_idx}][txn_class_id]") %>
+      </td>
+    <% end %>
+  </tr>
+  <% line_item = @line_item %>
+  <% if line_item.variant.is_bundle? %>
+    <%= render partial: 'spree/manage/orders/shared/line_item_bundle_parts',
+               locals: { line_item: line_item,
+                         line_qty: line_item.quantity }  %>
+
+  <% end %>
+  <% if line_item.variant.is_assembly? && line_item.variant.should_show_parts? %>
+    <%= render partial: 'spree/manage/orders/shared/line_item_assembly_parts',
+               locals: { line_item: line_item,
+                         line_qty: line_item.quantity }  %>
+  <% end %>
+  <input type="hidden" value="<%= @line_item.id %>" name="order[line_items_attributes][<%= item_form_idx %>][id]" id="order_line_items_attributes_<%= item_form_idx %>_id">
+</tbody>
+<script type='text/javascript'>
+  resizeTextArea();
+</script>

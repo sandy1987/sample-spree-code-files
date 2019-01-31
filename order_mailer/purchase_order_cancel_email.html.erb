@@ -1,0 +1,32 @@
+<table>
+  <tr>
+    <td>
+      <p class="lede">
+        Dear <%= @order.account_vendor_handle %>,
+      </p>
+      <p>
+        <%= Spree.t('order_mailer.purchase_order_cancel_email.instructions1') %>
+        <strong><%= @order.po_display_number %></strong>
+        <%= Spree.t('order_mailer.purchase_order_cancel_email.instructions2', customer: @order.customer.try(:name)) %>.
+        <%= Spree.t('order_mailer.purchase_order_cancel_email.instructions3') %>
+        <!-- Click <%#= link_to "here", edit_order_url(@order) %> to view additional order details. -->
+      </p>
+
+      <!-- Order Summary -->
+      <table>
+        <tr><td><strong><%= Spree.t('order_mailer.confirm_email.order_summary') %></strong></td></tr>
+        <tr>
+          <td>
+            Order from <%= "#{@order.customer.name}." %><br>
+            Purchase Order Date: <%= "#{display_vendor_date_format(@order.invoice_date, @order.vendor.date_format)}" %>.
+          </td>
+        </tr>
+      </table>
+
+      <!-- Order Items Summary -->
+      <%= render partial: 'spree/shared/po_mailer_line_items_table' %>
+
+    </td>
+    <td class="expander"></td>
+  </tr>
+</table>

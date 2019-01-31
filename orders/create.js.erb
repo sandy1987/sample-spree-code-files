@@ -1,0 +1,84 @@
+<% if flash[:error] %>
+  $('div#alert').html("<div class='alert alert-danger alert-dismissable'> <button type='button' class='close' data-dismiss='alert' aria-hidden='true'></button><%= flash[:error] %></div>");
+  $('#order-customer-id').select2('enable', true);
+  $('#save-account').removeClass('hidden').removeClass('disabled');
+<% elsif flash[:errors] %>
+  $('div#alert').html("<%= escape_javascript(render(partial: 'spree/shared/errors')) %>");
+  $('#order-customer-id').select2('enable', true);
+  $('#save-account').removeClass('hidden').removeClass('disabled');
+<% else %>
+  $('div#alert').empty();
+  <% if !@order.account.can_select_delivery? %>
+    $('#delivery_date').empty();
+  <% else %>
+    $('#delivery_date').replaceWith("<%= escape_javascript(render(partial: 'delivery_date_fields')) %>");
+  <% end %>
+  $('#account-address-info').replaceWith("<%= escape_javascript(render(partial: 'account_address_fields')) %>");
+
+  <% colspan_left = 6 %>
+  <%# colspan_left -= 1 unless current_vendor_view_settings.line_item_lot_number %>
+  <%# colspan_left -= 1 unless current_vendor_view_settings.variant_pack_size %>
+
+  <% if @order.try(:persisted?) %>
+    $('#single-order-form').prop('action', '/manage/orders/<%= @order.number %>');
+    $('#single-order-form').prepend("<input type='hidden' name='_method' value='patch'>");
+    $('#single-order-form').addClass('prevent-double-submission');
+    $('#subtotals-row').replaceWith("<%= escape_javascript(render(partial: 'subtotal_row', locals: {colspan_left: colspan_left})) %>");
+    $('#edit-order-buttons').replaceWith("<%= escape_javascript(render(partial: 'order_edit_buttons')) %>");
+    $('#order-details').replaceWith("<%= escape_javascript(render(partial: 'spree/manage/orders/order_details')) %>");
+    $('#totals-row').replaceWith("<%= j (render(partial: 'total_row.html.erb', locals: {colspan_left: colspan_left})) %>");
+
+    $('#save-account').addClass('hidden');
+
+    initPreventDoubleSubmission();
+    $('.tooltips').tooltip();
+    // TODO edit adjustments partial to not need the order_form helper so it can be loaded after the page exists
+    // this will be easier after merging changes related to promotions that touch this partial
+    // $('#all_adjustments').replaceWith("<%#= escape_javascript(render(partial: 'adjustments')) %>");
+
+    $('#variant-search-row').removeClass('hidden');
+    $('#new-line-item-select').select2({width: '100%'}).select2('open').select2('close');
+
+    $('#add-new-line-item-button').off('click').click(function(e){
+      e.preventDefault();
+      var newVariantId = $('#new-line-item-select').val();
+      var newVariantQty = $('#new-line-item-qty').val();
+      var itemFormIdx = $('.line-item-row').last().data('formlineid') || 0;
+      itemFormIdx += 1;
+      if (newVariantId === '' || newVariantQty === '' || parseInt(newVariantQty) < 0 ){
+        $('.new-item-required').each(function(){
+          if(this.value === '' || parseInt(this.value) < 0){
+            $(this).parent().addClass('has-error');
+          }else{
+            $(this).parent().removeClass('has-error');
+          }
+        });
+      }else{
+        $('.new-item-required').parent().removeClass('has-error');
+        $('#add-new-line-item-button').attr('disabled',true);
+        $('#new-line-item-qty').prop('disabled', true);
+        $("#new-line-item-select").select2('enable', false);
+        $('#order-customer-id').select2('enable', false);
+        $.ajax({
+          method: "POST",
+          url: "/manage/orders/<%= @order.number %>/add_line_item",
+          data: {
+            variant_id: newVariantId,
+            variant_qty: newVariantQty,
+            item_form_idx: itemFormIdx
+          }
+        });
+      }
+    });
+    $('.new-payment-btn').off('click').click(function(){
+      var orderId = $(this).data('order-id');
+      $.ajax({
+        method: 'GET',
+        url: '/manage/orders/' + orderId + '/payments/new.js'
+      });
+    });
+  <% else %>
+    $('#order-customer-id').select2('enable', true);
+    $('#save-account').removeClass('hidden');
+  <% end %>
+<% end %>

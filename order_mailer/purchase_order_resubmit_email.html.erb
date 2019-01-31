@@ -1,0 +1,19 @@
+<table>
+  <tr>
+    <td>
+      <p class="lede">
+        Dear <%= @order.account_vendor_handle %>,
+      </p>
+      <p>
+        <strong><%= @order.customer.name %></strong> has updated their purchase order <strong><%= @order.po_display_number %></strong>.<br>
+				Please retain the below order information for your records.
+      </p>
+			<!-- Order Summary -->
+      <%= render partial: 'spree/shared/po_customer_mailer_order_summary_table' %>
+			<!-- Order Items Summary -->
+      <%= render partial: 'spree/shared/po_mailer_line_items_table' %>
+
+    </td>
+    <td class="expander"></td>
+  </tr>
+</table>

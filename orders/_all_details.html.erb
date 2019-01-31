@@ -1,0 +1,17 @@
+<section class='col-md-6 hidden' id='minimum-order-details'>
+  <a style="float:right;" id='expand-order-details'>Show Details <i class="fa fa-expand" aria-hidden="true"></i></a>
+  <p>Customer: <%= @order.account.fully_qualified_name %></p>
+  <p><%= "#{@order.vendor.order_date_text.to_s.capitalize} Date".strip %>: <%= display_vendor_date_format(@order.delivery_date, @order.vendor.date_format) %></p>
+</section>
+
+<section id='order-details-expanded'>
+  <a style="float:right;" id='minimize-order-details'>Hide Details <i class="fa fa-compress" aria-hidden="true"></i></a>
+
+  <div class="clearfix"></div>
+  <div class='row'>
+    <%= render partial: 'spree/manage/orders/order_details', locals: {f: f} %>
+    <%= render partial: 'spree/shared/orders/account_details', locals: {f: f} %>
+  </div>
+
+  <div class="clearfix"></div>
+</section>

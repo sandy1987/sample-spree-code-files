@@ -1,0 +1,162 @@
+<div class="col-md-6 col-sm-12" id='order-details'>
+  <div class="portlet blue-hoki box">
+    <div class="portlet-title">
+      <div class="caption">
+        <i class="fa fa-cogs"></i><%= @order.vendor.name %>
+      </div>
+    </div>
+    <div class="portlet-body">
+      <div class="row static-info">
+        <div class="col-md-5 name"> Order #:</div>
+        <div class="col-md-7 value" id='order-number' data-order-number='<%= @order.number %>'><%= @order.display_number %></div>
+      </div>
+      <div class="row static-info">
+        <div class="col-md-5 name">
+          <%= label_tag(:po_number, "Purchase Order #:") %>
+        </div>
+        <div class="col-md-7 value">
+          <%= text_field(:order, :po_number, class: 'form-control') %>
+        </div>
+      </div>
+
+      <%= render partial: 'spree/manage/orders/vendor_date_field' %>
+
+      <% @order.custom_attrs.keys.each do |channel| %>
+        <%= render partial: "spree/shared/orders/channel/#{channel.downcase}/order_details", locals: {f: f} %>
+      <% end %>
+      <div class="row static-info">
+        <div class="col-md-5 name"> Order Status: </div>
+        <div class="col-md-7 value"> <%= @order.state == 'complete' ? 'Submitted' : @order.state.capitalize %> </div>
+      </div>
+      <div class="row static-info">
+        <div class="col-md-5 name"> Submitted At: </div>
+        <div class="col-md-7 value" id='invoice-sent-at'>
+          <%= sweet_full_date_time(@order.completed_at, @order.vendor.time_zone) %>
+        </div>
+      </div>
+      <div class="row static-info">
+        <div class="col-md-5 name"> Approved At: </div>
+        <div class="col-md-7 value" id='invoice-sent-at'>
+          <%= sweet_full_date_time(@order.approved_at, @order.vendor.time_zone) %>
+        </div>
+      </div>
+      <div class="row static-info">
+        <div class="col-md-5 name"> Last Updated At: </div>
+        <div class="col-md-7 value" id='invoice-sent-at'>
+          <%= sweet_full_date_time(@order.updated_at, @order.vendor.time_zone) %>
+        </div>
+      </div>
+      <div class="row static-info">
+        <div class="col-sm-5 name"> Payment Terms: </div>
+        <div class="col-sm-7 value" id='payment-terms'> <%= @order.account.try(:payment_terms).try(:name) %> </div>
+      </div>
+      <%= render partial: 'spree/shared/orders/payment_state' %>
+      <div class="row static-info">
+        <div class="col-md-5 name"> Total: </div>
+        <div class="col-md-7 value"> <span class='total-price'><%= display_sweet_price(@order.total, @order.currency) %></span> </div>
+      </div>
+      <div class="row static-info" id='tracking-fields'>
+        <%= render partial: 'spree/shared/orders/tracking_fields' %>
+      </div>
+      <div class="row static-info">
+        <div class="col-md-5 name"> Ships From: </div>
+        <div class="col-md-7 value" id='ships-from'>
+          <%= render partial: 'spree/shared/orders/ships_from' %>
+        </div>
+      </div>
+      <% if @order.vendor.track_order_class? %>
+        <div class="row static-info">
+          <div class="col-md-5 name"> Class: </div>
+          <% if @order.persisted? %>
+            <div class="col-md-7 value" id='order-transaction-class'>
+              <%= collection_select(:order, :txn_class_id, @vendor.transaction_classes, :id, :fully_qualified_name, {include_blank: true}, class: 'form-control') %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+      <div class="row static-info">
+        <div class="col-md-5 name"> Invoice Last Sent: </div>
+        <div class="col-md-7 value" id='invoice-sent-at'>
+          <% if @order.invoice_sent_at %>
+            <%= sweet_full_date_time(@order.invoice_sent_at, @order.vendor.time_zone) %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type = "text/javascript">
+
+$(document).ready(function() {
+
+
+      //todo, generate holidays
+      var holidays = [""
+      ]
+
+      $('#delivery-date').datepicker({
+        <% if params[:controller].include?('manage') %>
+          daysOfWeekHighlighted: "<%= @days_available[0] if @days_available %>",
+        <% else %>
+          daysOfWeekDisabled: "<%= @days_available[0] if @days_available %>",
+        <% end %>
+        todayHighlight: true,
+        autoclose: true,
+        changeMonth: true,
+        todayBtn: true,
+        //todo global disable dates
+        datesDisabled: holidays,
+        orientation: "bottom auto"
+    });
+  <% if @days_available && @account.try(:can_select_delivery?) %>
+    <% unless @order.approved? %>
+      var origin_date = $('#delivery-date').datepicker('getDate');
+      if (origin_date != null) {
+        var origin_dayOfWeek = origin_date.getUTCDay();
+      }
+      <% if params[:controller].include?('manage') %>
+        if (origin_date != null) {
+          if ("<%=@days_available[0]%>".indexOf(origin_dayOfWeek.toString()) > -1) {
+            $("#warning_delivery").removeClass("hidden");
+          } else {
+            $("#warning_delivery").addClass("hidden");
+          }
+        }
+        $("#delivery-date").on("change",function(){
+              var date = $(this).datepicker('getDate');
+              if (date != null) {
+                var dayOfWeek = date.getUTCDay();
+                if ("<%=@days_available[0]%>".indexOf(dayOfWeek.toString()) > -1) {
+                  $("#warning_delivery").removeClass("hidden");
+                } else {
+                  $("#warning_delivery").addClass("hidden");
+                }
+              }
+          });
+    <% else %>
+        if (origin_date != null) {
+          if ("<%=@days_available[0]%>".indexOf(origin_dayOfWeek.toString()) > -1) {
+            $("#warning_delivery").removeClass("hidden");
+            $('#delivery-date').val("");
+          } else {
+              $("#warning_delivery").addClass("hidden");
+          }
+        }
+      $("#delivery-date").on("change",function(){
+          var date = $(this).datepicker('getDate');
+          if (date != null) {
+            var dayOfWeek = date.getUTCDay();
+            if ("<%=@days_available[0]%>".indexOf(dayOfWeek.toString()) > -1) {
+              $("#warning_delivery").removeClass("hidden");
+              $('#delivery-date').val("");
+            } else {
+              $("#warning_delivery").addClass("hidden");
+            }
+          }
+        });
+      <% end %>
+    <% end %>
+  <% end %>
+});
+</script>

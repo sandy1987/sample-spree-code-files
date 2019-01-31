@@ -1,0 +1,28 @@
+<% if @order %>
+  <% if flash[:success] %>
+  	$('#alert').html("<div class='alert alert-success alert-auto-dissapear'><%= flash[:success] %></div>");
+  	setTimeout(function() {
+  			$(".alert-auto-dissapear").fadeOut(1500);
+  	},2000);
+  <% end %>
+
+  $('#cart-value').html("<span id='cart-value'>( <%= current_order.item_count == 0 ? 'Empty' : display_sweet_price(current_order.item_total, current_order.currency) %> )</span>");
+  $('#cart-overview').replaceWith("<%= escape_javascript(render(:partial => 'spree/manage/orders/cart_overview.html.erb', locals: {current_order: current_order})) %>");
+
+  $("#shopping-cart").fadeIn(100).fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
+  $('input').val('');
+
+  <% @order.line_items.where.not(id: nil).each do |line_item| %>
+  	<% next unless line_item.persisted? %>
+  	$('#product_<%= line_item.variant_id %>').attr("placeholder", "<%= line_item.quantity %>" + " in cart");
+  <% end %>
+<% end %>
+
+<% if flash[:errors] %>
+  $('#alert').replaceWith("<%= escape_javascript(render(partial: 'spree/shared/orders/add_to_cart_errors.html.erb')) %>");
+<% end %>
+
+$('#add-to-cart').removeAttr("disabled");
+$('#add-to-cart2').removeAttr("disabled");
+$('#all-products').removeClass('hidden');
+$('.loader').remove();

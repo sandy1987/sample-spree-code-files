@@ -1,0 +1,18 @@
+<div id='cart-overview'>
+    <table class="table">
+      <tbody>
+      <% extras = 0 %>
+      <% current_order.line_items.each_with_index do |li, idx| %>
+        <% if idx < 5 %>
+          <tr>
+            <td><strong><%= li.item_name %></strong></td>
+            <td> <strong><%= li.quantity %><strong></td>
+          </tr>
+        <% else %>
+          <% extras += 1 %>
+        <% end %>
+      <% end %>
+      <tbody>
+    </table>
+    <% if extras > 0 %><tr><td>...And <%= pluralize(extras, "other") %></td></tr><% end %>
+  </div>

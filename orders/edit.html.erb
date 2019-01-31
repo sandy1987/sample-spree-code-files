@@ -1,0 +1,152 @@
+<%= content_for :head_title do %>
+  Orders
+<% end %>
+
+<%= content_for :page_bar do %>
+  <%= render partial: 'spree/manage/orders/page_bar/edit' %>
+<% end %>
+
+<div class='row'>
+  <div class="portlet light ">
+    <% if current_company.subscription_includes?('payments') && current_spree_user.can_read?('payments', 'order') %>
+      <div class="portlet-title tabbable-line">
+        <% if @order.invoice %>
+          <div class="btn-group">
+            <h4>
+              <%= link_to manage_invoice_path(@order.invoice_id, format: :pdf), target: "_blank" do %>
+                Invoice #<%= @order.invoice.number %> <i class="fa fa-file-pdf-o"></i>
+              <% end %>
+            </h4>
+          </div>
+        <% end %>
+        <ul class="nav nav-tabs">
+          <li class="active long-tabs-link">
+            <a href="#overview_tab" data-toggle="tab">Overview</a>
+          </li>
+          <li class="long-tabs-link">
+            <a href="#payments" data-toggle="tab">Payments</a>
+          </li>
+          <!-- <li class="long-tabs-link">
+            <a href="" data-toggle="tab">Returns</a>
+          </li>
+          <li class="long-tabs-link">
+            <a href="" data-toggle="tab">Documents</a>
+          </li> -->
+        </ul>
+      </div>
+    <% elsif @order.invoice %>
+      <div class="btn-group">
+        <h4>
+          <%= link_to manage_invoice_path(@order.invoice_id, format: :pdf), target: "_blank" do %>
+            Invoice #<%= @order.invoice.number %> <i class="fa fa-file-pdf-o"></i>
+          <% end %>
+        </h4>
+      </div>
+    <% end %>
+    <div class="portlet-body">
+      <div class="tab-content">
+        <div class="tab-pane active" id="overview_tab">
+          <%= render partial: 'overview', locals: { payments: @order } %>
+        </div>
+        <div class="tab-pane" id="payments">
+          <%= render partial: 'spree/manage/payments/body_content/index', locals: { payments: @payments } %>
+        </div>
+        <!-- <div class="tab-pane" id="returns_tab">
+        </div>
+        <div class="tab-pane" id="documents_tab">
+        </div> -->
+      </div>
+    </div>
+  </div>
+</div>
+<div id="comments">
+  <%= commontator_thread(@order) %>
+</div>
+<% if @vendor.lot_tracking %>
+  <%= render partial: 'spree/manage/orders/handle_lots' %>
+<% end %>
+
+<%#= render partial: 'spree/manage/payments/modal/index' %>
+<%= render partial: 'spree/shared/payments/modal/show' %>
+<%= render partial: 'spree/shared/payments/modal/new' %>
+<%= render partial: 'spree/manage/refunds/modal/new' %>
+
+<script type="text/javascript">
+  var loadVariantSearchRow = function(){
+    $.ajax({
+      url: '/manage/orders/variant_search.js',
+      type: 'GET',
+      dataType: 'script',
+      data: {order_id: "<%= @order.try(:id) %>"}
+    });
+  }
+
+  $(document).on('ready', function(){
+    <% if order_can_add_products? %>
+      loadVariantSearchRow();
+    <% end %>
+    $('#clear-new-line-item').click(function(e){
+      e.preventDefault();
+      $('#new-line-item-select').select2('val', '');
+      $('#new-line-item-qty').val('');
+    });
+    var pane = $(".long-tabs-link");
+    for (var p=0; p<pane.length; p++) {
+      $(pane[p]).bind( "click", function() {
+        var href = $(this).find("a").attr('href');
+        // console.log(href);
+        if (href==="#overview_tab") {
+          $("#edit-order-button").show();
+          $("#comments").show();
+        }else {
+          $("#edit-order-button").hide();
+          $("#comments").hide();
+        }
+      });
+    }
+
+    var columnCount = $('.primary-header-row').children('th').length;
+    $(".inner-table-container").attr('colspan', columnCount - 2);
+  });
+  $('.payment-link').click(function(){
+    var orderNumber = '<%= @order.number %>'
+    var paymentId = $(this).closest('tr').data('payment-id');
+    $.ajax({
+      method: 'GET',
+      url: '/manage/orders/'+ orderNumber + '/payments/' + paymentId +'.js',
+    });
+  });
+  $('.refund-link').click(function(){
+    var orderNumber = '<%= @order.number %>'
+    var paymentId = $(this).closest('tr').data('payment-id');
+    $.ajax({
+      method: 'GET',
+      url: '/manage/orders/'+ orderNumber + '/payments/' + paymentId +'/refunds/new.js',
+    });
+  });
+
+  $('.new-payment-btn').off('click').click(function(){
+    var orderId = $(this).data('order-id');
+    $.ajax({
+      method: 'GET',
+      url: '/manage/orders/' + orderId + '/payments/new.js'
+    });
+  });
+
+  // function updatePartsOnLineItem(line_item_id, quantity) {
+  //   var orderId = $(this).data('order-id');
+  //   $.ajax({
+  //     method: 'POST',
+  //     dataType: 'script',
+  //     url: '/manage/orders/' + orderId + '/update_parts_on_line_item.js',
+  //     data: { line_item_id: line_item_id, quantity: quantity}
+  //   });
+  // }
+
+  $('.ordered-qty').off('change').change(function(){ //need this for the order edit page
+    var line_id = $(this).data('id');
+    var line_item_id = $(this).data('line-id');
+    $(".shipped-qty[data-id='" + line_id + "']").val(this.value);
+    // updatePartsOnLineItem(line_item_id, this.value)
+  });
+</script>

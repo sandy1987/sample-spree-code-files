@@ -1,0 +1,20 @@
+<% url = manage_product_path(@line_item.try(:variant).try(:product)) %>
+$('#line_item_<%= @line_item.try(:id) %>_lots').replaceWith("<%= j (render(partial: 'line_item_lots.html.erb', locals: {line_item: @line_item, url: url})) %>");
+<% if flash[:success] %>
+  $('#alert').html("<div class='alert alert-success alert-auto-dissapear'><%= flash[:success] %></div>");
+  setTimeout(function() {
+    $(".alert-auto-dissapear").fadeOut(1500);
+  },2000);
+<% end %>
+$('.lot_qty_btn').click(function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  var line_item_id = this.name;
+  var order_id = $(this).data('order-id');
+  if (line_item_id != undefined || line_item_id != ""){
+    getLotQty(line_item_id, order_id);
+  } else {
+    alert("Item not found");
+  }
+  $('#lot_modal').modal('show');
+});

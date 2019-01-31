@@ -1,0 +1,27 @@
+<td id="line_item_<%= line_item.id %>_lots">
+  <% if line_item.variant.try(:should_track_lots?) %>
+    <% line_item_lots = line_item.line_item_lots %>
+    <% if line_item_lots.present? %>
+      <% if @user_edit_line_item && (!@order.approved? || @approve_ship_receive)%>
+        <a name="<%=line_item.id%>" class="lot_qty_btn inline <%= 'danger bold' if (line_item_lots.sum(:count) != line_item.quantity) && (States[@order.state] >= States['approved']) %>"
+          data-toggle="modal" data-target="#lot_modal" data-order-id='<%= @order.id %>'>
+          <ul class='line-item-lot-container inline'>
+            <% line_item_lots.each do |line_item_lot| %>
+              <li><%= "#{line_item_lot.lot.try(:number)} (#{line_item_lot.count})" %></li>
+            <% end %>
+          </ul>
+        </a>
+      <% else %>
+        <ul class='line-item-lot-container'>
+          <% line_item_lots.each do |line_item_lot| %>
+            <li><%= "#{line_item_lot.lot.try(:number)} (#{line_item_lot.count})" %></li>
+          <% end %>
+        </ul>
+      <% end %>
+    <% else %>
+      <%= link_to '#lot', data: {toggle: 'modal', target: '#lot_modal', 'order-id' => "#{@order.id}"}, name: "#{line_item.id}", class: 'lot_qty_btn btn btn-primary btn-xs' do %>
+        <i class='fa fa-plus'></i> Add Lot
+      <% end %>
+    <% end %>
+  <% end %>
+</td>

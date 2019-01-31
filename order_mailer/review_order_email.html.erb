@@ -1,0 +1,23 @@
+<table>
+  <tr>
+    <td>
+      <p class="lede">
+        <%#= Spree.t('order_mailer.cancel_email.dear_customer') %>
+        Dear <%= @order.account_handle %>,
+      </p>
+      <p>
+        You've submitted order <%= @order.display_number %> for review.<br>
+        We will contact you directly after following up with our operations team. Thank you in advance for your patience. <br>
+      </p>
+      <p>
+        If you have any questions, please contact us at <%= @order.vendor.email %>.<br><br>
+        Thank you.
+      </p>
+
+      <!-- Order Items Summary -->
+      <%= render partial: 'spree/shared/mailer_all_line_items_table' %>
+
+    </td>
+    <td class="expander"></td>
+  </tr>
+</table>

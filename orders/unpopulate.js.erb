@@ -1,0 +1,30 @@
+<% if flash[:error] %>
+  $('#alert').html("<div class='alert alert-danger alert-dismissable'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'></button><%= flash[:error] %></div>");
+<% elsif @line_item && @order %>
+  <% colspan_left = 6 %>
+  <%# colspan_left -= 1 unless current_vendor_view_settings.line_item_lot_number %>
+  <%# colspan_left -= 1 unless current_vendor_view_settings.variant_pack_size %>
+  $("#line_item_<%= @line_item.id %>").remove();
+  // $(".line_item_parts<%= @line_item.id %>").remove();
+  $("#order_line_items_attributes_<%= params[:item_form_idx] %>_id").remove();
+  $('#cart-value').replaceWith("<span id='cart-value'>( <%= @order.item_count == 0 ? 'Empty' : display_sweet_price(@order.item_total, @order.currency) %> )</span>");
+  $('#cart-overview').replaceWith("<%= j (render(partial: 'spree/manage/orders/cart_overview.html.erb', locals: {current_order: @order})) %>");
+  $("#shopping-cart").fadeIn(100).fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
+  $('.subtotal-price').replaceWith("<span class='subtotal-price'><%= display_sweet_price(@order.item_total, @order.currency) %></span>")
+  $('.total-price').replaceWith("<span class='total-price'><%= display_sweet_price(@order.total, @order.currency) %></span>");
+  $('.item-count').replaceWith("<span class='item-count'><%= @order.item_count %></span>");
+  $('#subtotals-row').replaceWith("<%= j (render(partial: 'subtotal_row.html.erb', locals: {colspan_left: colspan_left})) %>");
+  $('#all-adjustments').html("<%= j (render(partial: 'adjustments.html.erb', locals: {colspan_left: colspan_left})) %>");
+  $('#totals-row').replaceWith("<%= j (render(partial: 'total_row.html.erb', locals: {colspan_left: colspan_left})) %>");
+  $('#payments-summary').replaceWith("<%= j(render(partial: 'spree/shared/orders/payments/summary_table')) %>");
+  $('#unsynced-inventory-item-warning').replaceWith("<%= j (render(partial: 'unsynced_inventory_item_warning.html.erb', locals: {integration_key: 'qbd'})) %>");
+<% end %>
+
+if($('.line-item-row').length === 0){
+  if($('#order-customer-id').length > 0){
+    $('#order-customer-id').select2('enable', true);
+  }
+  $('#tracking-fields').empty();
+  $('#subtotals-row').empty();
+  $('#all-adjustments').empty();
+}

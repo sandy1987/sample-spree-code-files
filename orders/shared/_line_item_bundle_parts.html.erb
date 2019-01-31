@@ -1,0 +1,50 @@
+<tr class="line_item_parts<%= line_item.id %>" class="line-item-part-row">
+  <td></td>
+  <td colspan="90%" class='inner-table-container'>
+    <table class="table table-condensed">
+      <thead>
+        <th width="25%">Part Name</th>
+        <th width="5%">SKU</th>
+        <% if @vendor.lot_tracking == true %>
+          <th width="25%">Part Lot Numbers</th>
+        <% end %>
+        <th width="22%">Part Qty / Unit</th>
+        <th width="22%">Quantity</th>
+      </thead>
+      <tbody>
+        <% if States[line_item.order.state] < States['shipped']%>
+          <% line_item.variant.parts.each do |part_variant| %>
+            <%
+            part_line_options = {
+              part_variant: part_variant,
+              part_name: part_variant.fully_qualified_name,
+              part_sku: part_variant.sku,
+              part_lots: line_item.lot_names_qty_for(part_variant),
+              part_qty: line_item.variant.count_for_(part_variant),
+              part_total: line_qty * line_item.variant.count_for_(part_variant)
+            }
+            %>
+            <%= render partial: "spree/manage/orders/shared/line_item_part",
+              locals: part_line_options %>
+          <% end %>
+        <% else %>
+          <% line_item.ordered_parts.each do |ordered_part| %>
+            <%
+            part_line_options = {
+              part_variant: ordered_part.part_variant,
+              part_name: ordered_part.part_variant.fully_qualified_name,
+              part_sku: ordered_part.part_variant.sku,
+              part_lots: line_item.lot_names_qty_for(ordered_part.part_variant),
+              part_qty: ordered_part.part_qty,
+              part_total: ordered_part.quantity
+            }
+            %>
+            <%= render partial: "spree/manage/orders/shared/line_item_part",
+              locals: part_line_options %>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </td>
+  <td></td>
+</tr>

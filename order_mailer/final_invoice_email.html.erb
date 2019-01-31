@@ -1,0 +1,36 @@
+<table>
+  <tr>
+    <td>
+      <p class="lede">
+        <%#= Spree.t('order_mailer.cancel_email.dear_customer') %>
+        Dear <%= @order.account_handle %>,
+      </p>
+      <p>
+        <% if @send_as_invoice %>
+          Your invoice is attached.
+        <% else %>
+          Your order has been finalized. Please see the details below.
+        <% end %>
+        <br>
+        <% if @order.vendor.include_website_url_in_emails %>
+          Click <%= link_to "here", edit_order_url(@order) %> to view additional order details.<br>
+        <% end %>
+      </p>
+
+      <% if @send_as_invoice %>
+        <%= render partial: 'spree/invoice_mailer/summary' %>
+      <% end %>
+      
+      <p>
+        Thank you for your business!<br><br>
+        Sincerely,<br>
+        <%= @order.vendor.name %>
+      </p>
+
+      <!-- Order Items Summary -->
+      <%= render partial: 'spree/shared/mailer_all_line_items_table' %>
+
+    </td>
+    <td class="expander"></td>
+  </tr>
+</table>

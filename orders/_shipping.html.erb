@@ -1,0 +1,60 @@
+<% @order.shipments.group_by { |s| s.selected_shipping_rate.try(:name) }.each do |name, shipments| %>
+<tr class="adjustment <%= 'alert-danger' if @order.ship_address.blank? %>">
+  <td></td>
+  <td colspan='5'>
+    <label id="special-instructions-checkbox" value="false"><a>Special Instructions (shown on packing list)</a></label>
+    <div class="row hidden" id="special-instructions-div">
+      <div class="col-md-12">
+        <div class="form-group">
+          <textarea rows="5" placeholder="Write Instructions Here" id="special-instructions"
+            class="form-control" name=order[special_instructions] maxlength="1000"
+            <%= 'readonly' if !@order.is_editable? %>><%= @order.special_instructions %>
+          </textarea>
+          <span class='pull-right help-block'>(1,000 char limit)</span>
+        </div>
+      </div>
+    </div>
+  </td>
+
+  <td colspan="<%= colspan %>">
+    <% if @order.ship_address.blank? %>
+      Must set up ship address to apply shipping methods
+    <% elsif @order.shipments.first.blank? %>
+      Shipping has not been set up yet and may not reflect the final cost.<br>
+      Please <%= submit_tag "Update" %>.
+    <% else %>
+      <% if available_methods.present? %>
+        Shipment via:
+        <% if !@order.is_editable? || (@order.approved? && !@approve_ship_receive) || order_is_void? %>
+          <%= @order.shipping_method.try(:name) %>
+        <% else %>
+          <%= collection_select :order, :shipping_method_id, available_methods, :id, :name, {include_blank: true}, {class: 'form-control'} %>
+        <% end %>
+      <% else %>
+        Shipping:
+      <% end %>
+    <% end %>
+  </td>
+  <% if @manual_adjustment && @order.is_editable? && !order_is_void? %>
+    <%= hidden_field :order, :override_shipment_cost %>
+      <td>
+        <i class="fa fa-info-circle tooltips" data-original-title= "Applying a price change here will override any dynamically calculated shipping rates. Selecting a differnt shipping method will revert this change" data-container="body"></i>
+        <div class='price-input'>
+          <% if @order.shipping_method.try(:rate_tbd) && !@order.override_shipment_cost %>
+            <label class="currency-label shipment-currency"><%= currency_symbol(@order.currency) %></label>
+            <input type='number' step='0.01' name='order[shipment_total]' class='form-control price-field line-item-price' placeholder="TBD" id='order_shipment_total'>
+            <%#= order_form.number_field :shipment_total, step: 0.01, placeholder: '-- --', class: 'form-control price-field' %>
+          <% else %>
+            <label class="currency-label shipment-currency"><%= currency_symbol(@order.currency) %></label>
+            <%= number_field_tag 'order[shipment_total]', number_with_precision(@order.shipment_total, precision: 2), step: 0.01, class: 'form-control price-field line-item-price', id: 'order_shipment_total' %>
+          <% end %>
+        </div>
+        <span class='input-group-btn'></span>
+          <button class='btn btn-primary' id='apply-shipment-cost'>Apply</button>
+        </span>
+      </td>
+  <% else %>
+    <td><%= display_sweet_price(@order.shipment_total, @order.currency) %></td>
+  <% end %>
+</tr>
+<% end %>

@@ -1,0 +1,80 @@
+<% if @line_item %>
+  <% colspan_left = 6 %>
+  <%# colspan_left -= 1 unless current_vendor_view_settings.line_item_lot_number %>
+  <%# colspan_left -= 1 unless current_vendor_view_settings.variant_pack_size %>
+  $('#variant-quick-add').before("<%= j (render(:partial => 'new_line_item.html.erb', locals: {item_form_idx: params[:item_form_idx], variant: @variant, avv: @avv})) %>");
+
+  $('#new-line-item-qty').val('');
+
+  $("#new-line-item-select").select2('val', '');
+
+  $('#cart-value').replaceWith("<span id='cart-value'>( <%= @order.item_count == 0 ? 'Empty' : display_sweet_price(@order.item_total, @order.currency) %> )</span>");
+  $('#cart-overview').replaceWith("<%= j (render(partial: 'spree/manage/orders/cart_overview.html.erb', locals: {current_order: @order})) %>");
+  $("#shopping-cart").fadeIn(100).fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
+  $('.subtotal-price').replaceWith("<span class='subtotal-price'><%= display_sweet_price(@order.item_total, @order.currency) %></span>");
+  $('.total-price').replaceWith("<span class='total-price'><%= display_sweet_price(@order.total, @order.currency) %></span>");
+  $('.item-count').replaceWith("<span class='item-count'><%= @order.item_count %></span>");
+  $('#subtotals-row').replaceWith("<%= j (render(partial: 'subtotal_row.html.erb', locals: {colspan_left: colspan_left})) %>");
+  $('#all-adjustments').html("<%= j (render(partial: 'adjustments.html.erb', locals: {colspan_left: colspan_left})) %>");
+  $('#totals-row').replaceWith("<%= j (render(partial: 'total_row.html.erb', locals: {colspan_left: colspan_left})) %>");
+  $('#unsynced-inventory-item-warning').replaceWith("<%= j (render(partial: 'unsynced_inventory_item_warning.html.erb', locals: {integration_key: 'qbd'})) %>");
+  $('#ships-from').html("<%= j(render(partial: 'spree/shared/orders/ships_from')) %>");
+  $('#payments-summary').replaceWith("<%= j(render(partial: 'spree/shared/orders/payments/summary_table')) %>");
+  if($('#tracking-fields').children().length === 0){
+    $('#tracking-fields').html("<%= j (render(partial: 'spree/shared/orders/tracking_fields.html.erb')) %>");
+  }
+<% else %>
+  if($('.line-item-row').length === 0 && $('#order-customer-id').length > 0){
+    $('#order-customer-id').select2('enable', true);
+  }
+<% end %>
+$('#alert').html("<%= j (render(partial: 'spree/shared/errors.html.erb')) %>");
+
+$("#new-line-item-select").select2('enable', true);
+$('#new-line-item-qty').prop('disabled', false);
+$('#add-new-line-item-button').attr('disabled',false);
+$("#new-line-item-select").select2('open').select2('close');
+
+$('#approve-button').off('click').click(function(e){ //update order criteria
+  var deliveryDate = new Date($('#order-delivery-date').val());
+  var today = new Date();
+  if (deliveryDate < today){
+    e.preventDefault();
+    if (confirm('The date selected is in the past, are you sure you want to proceed?')){
+      $('#single-order-form').append("<input type='hidden' name='commit' value='Approve Order'>")
+      $('#single-order-form').submit();
+    }
+  }
+  var orderRuleErrors = <%= @order.errors_from_order_rules.any? %>
+
+  if (orderRuleErrors){
+    e.preventDefault();
+    if (confirm("<%= raw(@order.errors_from_order_rules.join(', ')) %>" + ". Are you sure you want to proceed?")){
+      $('#single-order-form').append("<input type='hidden' name='commit' value='Approve Order'>")
+      $('#single-order-form').submit();
+    }
+  }
+});
+
+$('.ordered-qty').off('change').change(function(){ //need this for the order edit page
+  var line_id = $(this).data('id');
+  $(".shipped-qty[data-id='" + line_id + "']").val(this.value);
+});
+
+$('.new-payment-btn').off('click').click(function(){
+  var orderId = $(this).data('order-id');
+  $.ajax({
+    method: 'GET',
+    url: '/manage/orders/' + orderId + '/payments/new.js'
+  });
+});
+$('.lot_qty_btn').off('click').click(function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  var line_item_id = this.name;
+  var order_id = $(this).data('order-id');
+  if (line_item_id != undefined || line_item_id != ""){
+    getLotQty(line_item_id, order_id);
+  }
+  $('#lot_modal').modal('show');
+});

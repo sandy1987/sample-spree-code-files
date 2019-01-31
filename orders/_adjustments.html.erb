@@ -1,0 +1,155 @@
+<% colspan = 2 %>
+<% colspan += 1 if States[@order.state] >= States['approved'] %>
+<% colspan += 1 if @order.vendor.try(:receive_orders) && States[@order.state] >= States['shipped'] %>
+<% colspan += 1 if @order.vendor.try(:include_weights) %>
+
+<% if @order.line_item_adjustments.exists? %>
+  <% @order.line_item_adjustments.promotion.eligible.group_by(&:label).each do |label, adjustments| %>
+    <tr class="adjustment">
+      <td colspan="<%= colspan_left %>"></td>
+      <td colspan="<%= colspan %>">
+        <%= adjustments.first.source.try(:promotion).try(:name) || label %>:
+      </td>
+      <td>
+        <%= display_sweet_price(adjustments.sum(&:amount), @order.currency) %>
+      </td>
+    </tr>
+  <% end %>
+<% end %>
+<% @order.adjustments.eligible.each do |adjustment| %>
+  <% next if (adjustment.source_type == 'Spree::TaxRate') and (adjustment.amount == 0) %>
+  <tr class="adjustment">
+    <td colspan="<%= colspan_left %>"></td>
+    <td colspan="<%= colspan %>">
+    <% if adjustment.source_type == "Spree::PromotionAction" %>
+      <%= "#{adjustment.source.try(:promotion).try(:name) || adjustment.label}:" %>
+    <% elsif !@manual_adjustment %>
+      <%= "#{adjustment.label}:" %>
+    <% else %>
+      <% if @order.is_editable? %>
+        <%= link_to manage_order_adjustment_url(@order.id, adjustment.id), method: :delete,
+        data:{confirm: "Are you sure you want to delete this adjustment?"}, style: 'display:inline;' do %>
+          <i class="fa fa-times"></i>
+        <% end %>
+        <%= link_to "#{adjustment.label}:", edit_manage_order_adjustment_url(@order, adjustment.id), style: 'display:inline;' %>
+      <% else %>
+        <%= "#{adjustment.label}:" %>
+      <% end %>
+    <% end %>
+    </td>
+    <td>
+      <div class="right"><%= display_sweet_price(adjustment.amount, @order.currency) %></div>
+    </td>
+  </tr>
+<% end %>
+<!-- END ORDER LEVEL ADJUSTMENTS -->
+<!-- BEGIN TAX ADJUSTMENTS -->
+<% if @order.all_adjustments.eligible.tax.exists? %>
+  <% @order.all_adjustments.eligible.tax.group_by(&:label).each do |label, adjustments| %>
+  <tr class="adjustment">
+    <td colspan="<%= colspan_left %>"></td>
+    <td colspan="<%= colspan %>">
+      <%= Spree.t(:tax) %> <%= label %>:
+    </td>
+    <td>
+      <%= display_sweet_price(adjustments.sum(&:amount), @order.currency) %>
+    </td>
+  </tr>
+  <% end %>
+<% end %>
+<!-- END TAX ADJUSTMENTS -->
+<!-- BEGIN SHIPPING METHODS -->
+<% available_methods = @order.available_shipping_methods %>
+<%= render partial: 'shipping', locals: {colspan: colspan, available_methods: available_methods} %>
+
+<% no_ship_products = @order.no_shipping_method_products %>
+<% unless available_methods.present? || @order.line_items.none? || States[@order.state] >= States['shipped'] %>
+  <%#= render partial: 'shipping', locals: {colspan: colspan} %>
+  <% if no_ship_products.present? %>
+    <tr>
+      <td class="alert alert-warning" colspan='100%'>Some products in this order do not have a shipping method set.
+        <ul>
+          <% no_ship_products.each do |product| %>
+            <li><%= product.name %></li>
+          <% end %>
+        </ul>
+      </td>
+    </tr>
+  <% elsif @order.vendor.shipping_methods.none? {|sm| sm.include?(@order.ship_address)} %>
+    <tr>
+      <td class="alert alert-warning" colspan='100%'>
+        There are no valid shipping methods for the given shipping address.
+      </td>
+    </tr>
+  <% else %>
+    <tr>
+      <td class="alert alert-warning" colspan='100%'>
+        There are no shipping methods defined that cover all of the products in this order.  Please set up a new method or add an adjustment.
+      </td>
+    </tr>
+  <% end %>
+<% end %>
+<!-- END SHIPPING METHODS -->
+<!-- BEGIN SHIPPING ADJUSTMENTS (only promotion adjustments)-->
+<% @order.shipment_adjustments.promotion.eligible.group_by(&:label).each do |label, adjustments| %>
+  <tr class="adjustment">
+    <td colspan="<%= colspan_left %>"></td>
+    <td colspan="<%= colspan %>">
+      <%= adjustments.first.source.try(:promotion).try(:name) || label %>:
+    </td>
+    <td>
+      <%= display_sweet_price(adjustments.sum(&:amount), @order.currency) %>
+    </td>
+  </tr>
+<% end %>
+<!-- END SHIPPING ADJUSTMENTS -->
+<!-- BEGIN ADD ADJUSTMENT -->
+<% if @order.is_editable? %>
+  <tr class="adjustment">
+    <td colspan="<%= colspan_left %>"></td>
+
+    <td colspan="<%= colspan %>">
+      <% if @manual_adjustment && !order_is_void? %>
+        <%= link_to 'Add Adjustment', new_manage_order_adjustment_path(@order), id: 'new-adjustment' %>
+      <% end %>
+    </td>
+    <td colspan='100%'></td>
+  </tr>
+<% end %>
+<!-- END ADD ADJUSTMENT -->
+
+<script type='text/javascript'>
+  $('#apply-shipment-cost').click(function(e){
+    e.preventDefault();
+    $('#order_override_shipment_cost').val(true);
+    $('#single-order-form').submit();
+  });
+  $('#order_shipment_total').keypress(function(e){
+    if(e.which === 13){
+      $('#apply-shipment-cost').trigger('click');
+    }
+  });
+  $('#order_shipping_method_id').change(function(e){
+    $('#order_override_shipment_cost').val(false);
+    $(this).parents('form')[0].submit();
+  });
+
+  var stored_text = "";
+  if (!!$.trim($("#special-instructions").val())) {
+    $('#special-instructions-div').removeClass('hidden');
+    $('#special-instructions-checkbox').val("true");
+  }
+
+  $('#special-instructions-checkbox').click(function(){
+    if ($('#special-instructions-checkbox').val() == "true") {
+      stored_text = $('#special-instructions').val();
+      $('#special-instructions-div').addClass('hidden');
+      $('#special-instructions').val(null);
+      $('#special-instructions-checkbox').val("false");
+    } else {
+      $('#special-instructions-div').removeClass('hidden');
+      $('#special-instructions').val(stored_text);
+      $('#special-instructions-checkbox').val("true");
+    }
+  });
+</script>

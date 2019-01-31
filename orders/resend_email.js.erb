@@ -1,0 +1,9 @@
+<% if flash[:success] %>
+	$('#alert').html("<div class='alert alert-success alert-auto-dissapear'><%= flash[:success] %></div>");
+	setTimeout(function() {
+			$(".alert-auto-dissapear").fadeOut(1500);
+	},2000);
+<% end %>
+<% if flash[:error] %>
+	$('#alert').html("<div class='alert alert-danger alert-dismissable'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'></button><%= flash[:error] %></div>");
+<% end %>

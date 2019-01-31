@@ -1,0 +1,48 @@
+$('#variant-select-cell').replaceWith("<%= escape_javascript(render(partial: 'variant_search_row.html.erb')) %>");
+$('#new-line-item-select').select2({width: '100%'});
+
+$('#new-line-item-qty').keydown(function(e){
+  if(e.which === 13){ //Enter key
+    e.preventDefault();
+    $('#add-new-line-item-button').click();
+  }
+});
+
+// Order needs to exit for this to be useful. We try to attach this listener on
+// page load, which won't happen on the new page, so we also try and attach it
+// after the order is created.
+<% if @order.try(:persisted?) %>
+  $('#add-new-line-item-button').off('click').click(function(e){
+    e.preventDefault();
+    var newVariantId = $('#new-line-item-select').val();
+    var newVariantQty = $('#new-line-item-qty').val();
+    var itemFormIdx = $('.line-item-row').last().data('formlineid') || 0;
+    itemFormIdx += 1;
+    if (newVariantId === '' || newVariantQty === '' || parseInt(newVariantQty) < 0 ){
+      $('.new-item-required').each(function(){
+        if(this.value === '' || parseInt(this.value) < 0){
+          $(this).parent().addClass('has-error');
+        }else{
+          $(this).parent().removeClass('has-error');
+        }
+      });
+    }else{
+      $('.new-item-required').parent().removeClass('has-error');
+      $('#add-new-line-item-button').attr('disabled',true);
+      $('#new-line-item-qty').prop('disabled', true);
+      $("#new-line-item-select").select2('enable', false);
+      if($('#order-customer-id').length > 0){
+        $('#order-customer-id').select2('enable', false);
+      }
+      $.ajax({
+        method: "POST",
+        url: "/manage/orders/<%= @order.try(:number) %>/add_line_item",
+        data: {
+          variant_id: newVariantId,
+          variant_qty: newVariantQty,
+          item_form_idx: itemFormIdx
+        }
+      });
+    }
+  });
+<% end %>

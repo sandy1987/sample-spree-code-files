@@ -1,0 +1,72 @@
+<ul class="page-breadcrumb">
+  <li>
+    <%= link_to "Home", manage_path %>
+    <i class="fa fa-circle"></i>
+  </li>
+  <li>
+    <%= link_to "Orders", manage_orders_path %>
+    <i class="fa fa-circle"></i>
+  </li>
+  <li>
+    <span>Order #<%= @order.display_number %></span>
+  </li>
+</ul>
+<div class="page-toolbar">
+  <%= link_to manage_order_generate_path(@order), class: 'btn green-jungle margin-right-10' do%>
+    <i class="fa fa-plus"></i>&nbsp;New Order From This Order
+  <% end %>
+  <div class="btn-group pull-right">
+    <button type="button" class="btn green dropdown-toggle" data-toggle="dropdown"> Actions
+      <i class="fa fa-angle-down"></i>
+    </button>
+    <ul class="dropdown-menu pull-right" role="menu">
+      <% unless @order.invoice.try(:multi_order) %>
+        <li>
+          <%= link_to send_invoice_manage_order_path(@order, format: :js), remote: true do %>
+            <i class='fa fa-envelope-o'></i> <%= Spree.t(:send_invoice) %>
+          <% end %>
+        </li>
+      <% end %>
+      <% if States[@order.state] >= States['shipped'] %>
+        <!-- Removing in favor of adding more specific buttons -->
+        <!-- <li>
+          <%#= link_to resend_email_manage_order_path(@order, format: :js), remote: true do %>
+            <i class='fa fa-envelope-o'></i> Resend Email
+          <%# end %>
+        </li> -->
+        <li>
+          <%= link_to void_manage_order_path(@order), method: :post,
+            data: {confirm: "Warning: voiding this order can't be undone. Are you sure you want to proceed?"} do %>
+            <i class='fa fa-ban'></i> Void Transaction
+          <% end %>
+        </li>
+      <% end %>
+      <% unless @order.state == "cart" || @order.state == "canceled" %>
+        <li>
+          <%= link_to manage_packaging_slip_path(@order, format: :pdf), target: "_blank" do %>
+            <i class='fa fa-file-pdf-o'></i> Download packaging slip
+          <% end %>
+        </li>
+      <% end %>
+      <% if @order.approved? && @order.invoice.try(:multi_order) %>
+        <li>
+          <%= link_to separate_invoice_manage_invoice_path(@order) do %>
+            <i class='fa fa-object-ungroup'></i> Create Separate Invoice
+          <% end %>
+        </li>
+      <% end %>
+      <% if @order.invoice && current_vendor.use_separate_invoices %>
+        <li>
+          <%= link_to edit_manage_invoice_path(@order.invoice_id) do %>
+            <i class='fa fa-file-text-o'></i> View Invoice
+          <% end %>
+        </li>
+      <% end %>
+      <li>
+        <%= link_to manage_orders_path do %>
+          <i class='fa fa-reply'></i> Back to All Orders
+        <% end %>
+      </li>
+    </ul>
+  </div>
+</div>

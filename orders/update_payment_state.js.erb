@@ -1,0 +1,14 @@
+<% colspan_left = 5 %>
+<%# colspan_left -= 1 unless current_vendor_view_settings.line_item_lot_number %>
+<%# colspan_left -= 1 unless current_vendor_view_settings.variant_pack_size %>
+$('#order-payment-state').replaceWith("<%= escape_javascript(render(partial: 'spree/shared/orders/payment_state')) %>");
+$('#totals-row').replaceWith("<%= j (render(partial: 'total_row.html.erb', locals: {colspan_left: colspan_left})) %>");
+<% if flash[:errors] %>
+  $('#alert').html("<div class='alert alert-danger alert-dismissable'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'></button><%= flash[:errors] %></div>");
+<% end %>
+<% if flash[:success] %>
+  $('#alert').html("<div class='alert alert-success alert-auto-dissapear'><%= flash[:success] %></div>");
+  setTimeout(function() {
+    $(".alert-auto-dissapear").fadeOut(1500);
+  },2000);
+<% end %>

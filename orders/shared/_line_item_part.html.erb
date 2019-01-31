@@ -1,0 +1,19 @@
+<tr data-part-variant-id="<%= part_variant.id %>">
+  <td style="text-align: left;"><%= part_name %></td>
+  <td><%= part_sku %></td>
+  <% if @vendor.lot_tracking == true %>
+    <% if part_variant.should_track_lots? %>
+      <td class="lot-numbers">
+        <% if part_lots.size.zero? %>
+          No available lots
+        <% else %>
+          <%= part_lots.join(';') %>
+        <% end %>
+      </td>
+    <% else %>
+      <td>N/A</td>
+    <% end %>
+  <% end %>
+  <td><%= part_qty %></td>
+  <td class="qty"><%= part_total %></td>
+</tr>

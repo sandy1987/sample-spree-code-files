@@ -1,0 +1,20 @@
+<tr class="totals" id='subtotals-row'>
+  <td></td>
+  <td colspan="<%= colspan_left - 1%>">
+    <% if order_can_add_products? %>
+      <%= submit_tag Spree.t(:add_item), class: "btn btn-primary warn-before-action", id: 'add-from-catalog-btn' %>
+    <% end %>
+  </td>
+  <td>Subtotal:</td>
+  <% if States[@order.state] >= States['approved'] %>
+    <td><%= @order.line_items.sum(:ordered_qty) %></td>
+  <% end %>
+  <% if @order.vendor.try(:receive_orders) && States[@order.state] >= States['shipped'] %>
+    <td><%= @order.line_items.sum(:shipped_qty) %></td>
+  <% end %>
+  <td><%= @order.item_count %></td>
+  <% if @order.vendor.try(:include_weights) %>
+    <td><%= @order.display_total_weight_in(@order.vendor.weight_units) %></td>
+  <% end %>
+  <td><span class='subtotal-price'><%= display_sweet_price(@order.item_total, @order.currency) %></span></td>
+</tr>

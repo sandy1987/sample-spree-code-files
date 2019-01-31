@@ -1,0 +1,124 @@
+<div id="lot_qty_div">
+  <% if !@line_item.product.is_bundle? %>
+    <div>
+      <table class="table">
+        <!-- <col width="70%">
+        <col width="30%"> -->
+        <thead>
+          <% if @line_item.all_lots.empty? %>
+            <tr><td colspan="100%"><%= Spree.t(:no_lots) %>.</td></tr>
+          <% else %>
+            <tr>
+              <th><%= Spree.t(:lot_number) %></th>
+              <th><%= Spree.t(:available) %></th>
+              <th><%= Spree.t(:sell_by) %></th>
+              <th><%= Spree.t(:qty) %></th>
+            </tr>
+          </thead>
+          <!-- if have been updated before -->
+          <% line_item_lots = @line_item.line_item_lots.includes(lot: [stock_item_lots: :stock_item]) %>
+            <% if line_item_lots.present? %>
+              <tbody id='existing-line-item-lots'>
+                <% line_item_lots.each do |line_item_lot| %>
+                  <tr>
+                    <td class="number_lot" data-row=<%=@order.line_items.find_index(@line_item)%> data-lot-id=<%= line_item_lot.lot.id %> style="text-align: left;"><%= line_item_lot.lot.number%></td>
+                    <td class='qty_available' data-lot-id=<%= line_item_lot.lot.id %>><%= line_item_lot.lot.stock_item_lots.detect{|item_lot| item_lot.stock_item.try(:stock_location_id) == @line_item.order.shipments.first.try(:stock_location_id)}.try(:count) %></td>
+                    <td><%= display_vendor_date_format(line_item_lot.lot.try(:sell_by), current_vendor.try(:date_format)) %></td>
+                    <td><%= number_field_tag "", line_item_lot.count, class: "submit_lot_count form-control", data:{id: line_item_lot.lot.id, line_item: @line_item.id, row: @order.line_items.find_index(@line_item)} %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+              <tbody id='possible-line-item-lots'>
+                <% other_lots = @line_item.possible_lots.where.not(id: line_item_lots.pluck(:lot_id)).order(:sell_by) %>
+                <% if other_lots.present? %>
+                  <% other_lots.each do |lot| %>
+                    <tr class='hidden'>
+                      <td class="number_lot" data-total= <%=@line_item.ordered_qty%> data-lot-id=<%= lot.id %> style="text-align: left;"><%= lot.number%></td>
+                      <td class='qty_available' data-lot-id=<%= lot.id %>><%= lot.stock_item_lots.detect{|item_lot| item_lot.stock_item.try(:stock_location_id) == @line_item.order.shipments.first.try(:stock_location_id)}.try(:count) %></td>
+                      <td><%= display_vendor_date_format(lot.try(:sell_by), current_vendor.try(:date_format)) %></td>
+                      <td><%= number_field_tag "", 0 , class: "submit_lot_count form-control", data:{id: lot.id, line_item: @line_item.id, row: @order.line_items.find_index(@line_item)} %></td>
+                    </tr>
+                  <% end %>
+                  <tr>
+                    <td colspan="100%">
+                      <a id='more-lot-options' class='pull-right'>More Options</a>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            <% else %>
+              <tbody id='possible-line-item-lots'>
+                <% @line_item.possible_lots.order(:sell_by).each do |lot| %>
+                  <tr>
+                    <td class="number_lot" data-total= <%=@line_item.ordered_qty%> data-lot-id=<%= lot.id %> style="text-align: left;"><%= lot.number%></td>
+                    <td class='qty_available' data-lot-id=<%= lot.id %>><%= lot.stock_item_lots.detect{|item_lot| item_lot.stock_item.try(:stock_location_id) == @line_item.order.shipments.first.try(:stock_location_id)}.try(:count) %></td>
+                    <td><%= display_vendor_date_format(lot.try(:sell_by), current_vendor.try(:date_format)) %></td>
+                    <td><%= number_field_tag "", 0 , class: "submit_lot_count form-control", data:{id: lot.id, line_item: @line_item.id, row: @order.line_items.find_index(@line_item)} %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            <% end %>
+          <% end %>
+        </table>
+    </div>
+  <% else %>
+  <div>
+    <table class="table">
+      <thead>
+        <% if @line_item.all_lots.empty? %>
+           <tr><td colspan="1"><%= Spree.t(:no_lots) %>.</td></tr>
+        <% else %>
+        <tr>
+            <th><%= Spree.t(:part) %></th>
+            <th><%= Spree.t(:lot_number) %></th>
+            <th><%= Spree.t(:part_quantity) %></th>
+            <th><%= Spree.t(:total) %></th>
+            <th><%= Spree.t(:available) %></th>
+            <th><%= Spree.t(:qty) %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- if have been updated before -->
+            <% if @line_item.line_item_lots.present?%>
+              <% @line_item.line_item_lots.sort_by{|part, part_comparison| part.lot.variant.name}.each do |line_item_lot| %>
+                <tr>
+                  <% parts_qty = @line_item.variant.parts_variants.find_by(part_id: line_item_lot.lot.variant).try(:count)%>
+                  <td><%=line_item_lot.lot.variant.full_context%></td>
+                  <td class="number_lot" data-row=<%=@order.line_items.find_index(@line_item)%> data-lot-id=<%= line_item_lot.lot.id %> style="text-align: left;"><%= line_item_lot.lot.number%></td>
+                  <td class="qty_part" data-assembly= <%=@line_item.id%> data-lot-id=<%=line_item_lot.lot.id%> data-variant-id=<%=line_item_lot.lot.variant.id%> style="text-align: left;"><%= parts_qty %></td>
+                  <td><%= @line_item.ordered_qty * parts_qty %></td>
+                  <td class='qty_available' data-lot-id=<%= line_item_lot.lot.id %>><%= line_item_lot.lot.stock_item_lots.detect{|item_lot| item_lot.stock_item.try(:stock_location_id) == @line_item.order.shipments.first.try(:stock_location_id)}.try(:count) %></td>
+                  <td><%= number_field_tag "", line_item_lot.count, class: "submit_lot_count form-control", data:{id: line_item_lot.lot.id, variant_id: line_item_lot.lot.variant.id, line_item: @line_item.id, row: @order.line_items.find_index(@line_item)} %></td>
+                </tr>
+              <% end %>
+            <% else %>
+              <% @line_item.variant.parts.each do |part| %>
+              <% part.lots.each do |lot| %>
+              <% if lot.stock_item_lots.select{|stock_item_lot| stock_item_lot.stock_location == @order.shipments.first.try(:stock_location)}.present? && lot.available%>
+                  <% parts_qty = @line_item.variant.parts_variants.find_by(part_id: lot.variant).try(:count)%>
+                  <tr>
+                     <td><%=part.full_context%></td>
+                    <td class="number_lot" data-total= <%=@line_item.ordered_qty%> data-lot-id=<%= lot.id %> style="text-align: left;"><%= lot.number%></td>
+                    <td class="qty_part" data-assembly= <%=@line_item.id%> data-lot-id=<%=lot.id%> data-variant-id=<%=lot.variant.id%> style="text-align: left;"><%= parts_qty %></td>
+                    <td> <%= @line_item.ordered_qty * parts_qty%></td>
+                    <td class='qty_available' data-lot-id=<%= lot.id %>><%= lot.stock_item_lots.detect{|item_lot| item_lot.stock_item.try(:stock_location_id) == @line_item.order.shipments.first.try(:stock_location_id)}.try(:count) %></td>
+                    <td><%= number_field_tag "", 0 , class: "submit_lot_count form-control", data:{id: lot.id, variant_id: lot.variant, line_item: @line_item.id, row: @order.line_items.find_index(@line_item)} %></td>
+                  </tr>
+                <% end %>
+              <% end %>
+            <% end %>
+          </tbody>
+          <% end %>
+        <% end %>
+      </table>
+  </div>
+  <% end %>
+</div>
+
+<script type='text/javascript'>
+  $('#more-lot-options').click(function(e){
+    e.preventDefault();
+    $(this).hide();
+    $('tr.hidden', '#possible-line-item-lots').removeClass('hidden');
+  });
+</script>
